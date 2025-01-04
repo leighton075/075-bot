@@ -5,7 +5,7 @@ Bot is designed for use on a small private server because I don't like Maki. It'
 ## Features
 
 - **Join & Leave Announcements**: Send a message welcoming or announcing when someone joins or leaves the server.
-- **Message Filtering**: Set up do the photo channel can only contain google photos album links.
+- **Message Filtering**: Set up so the photo channel can only contain google photos album links.
 - **Moderation**: Give/Remove roles and Kick/Ban users.
 - **User Info/Avatar**: Get info about a user or their avatar.
 - **Fortnite Stats/Status**: Uses the fortnite-api and the fornite server status api to get info about server status's and player stats.
