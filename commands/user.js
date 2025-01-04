@@ -52,7 +52,7 @@ module.exports = {
             return interaction.reply({ embeds: [embed] });
         } catch (error) {
             console.error('Error getting user\'s information', error);
-            return interaction.reply({ content: 'There was an error getting the user\'s information', ephemeral: true });
+            return interaction.reply({ content: 'There was an error getting the user\'s information', flags: 64 });
         }
     },
 };

@@ -34,13 +34,13 @@ module.exports = {
 
             await interaction.reply({
                 content: 'Sent you a DM with the authorisation link! 📩',
-                ephemeral: true,
+                flags: 64,
             });
         } catch (dmError) {
             console.error(`Error sending DM to ${interaction.user.tag}:`, dmError.message);
             await interaction.reply({
                 content: "I couldn't DM you the authorisation link. Please check your privacy settings and try again.",
-                ephemeral: true,
+                flags: 64,
             });
         }
     },

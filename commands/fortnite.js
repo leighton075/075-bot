@@ -57,7 +57,7 @@ module.exports = {
                 await interaction.reply({ embeds: [embed] });
             } catch (error) {
                 console.error('Error fetching Fortnite status or maintenance:', error.message);
-                await interaction.reply({ content: `Failed to fetch Fortnite status or maintenance info: ${error.message}`, ephemeral: false });
+                await interaction.reply({ content: `Failed to fetch Fortnite status or maintenance info: ${error.message}` });
             }
         }
 
@@ -65,7 +65,7 @@ module.exports = {
             const playerName = interaction.options.getString('player');
             
             if (!playerName) {
-                return interaction.reply({ content: 'Please provide a valid Fortnite username.', ephemeral: true });
+                return interaction.reply({ content: 'Please provide a valid Fortnite username.', flags: 64 });
             }
 
             try {
@@ -109,7 +109,7 @@ module.exports = {
                 await interaction.reply({ embeds: [embed] });
             } catch (error) {
                 console.error('Error fetching player stats:', error.message);
-                await interaction.reply({ content: `Failed to fetch player stats for ${playerName}: ${error.message}`, ephemeral: false });
+                await interaction.reply({ content: `Failed to fetch player stats for ${playerName}: ${error.message}` });
             }
         }
     },

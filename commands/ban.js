@@ -19,7 +19,7 @@ module.exports = {
         const reason = interaction.options.getString('reason') || 'No reason provided';
 
         try {
-            await interaction.reply({ content: `Banning user ${user.tag}...`, ephemeral: true });
+            await interaction.reply({ content: `Banning user ${user.tag}...`, flags: 64 });
 
             await interaction.guild.members.kick(user, { reason });
 
@@ -27,7 +27,7 @@ module.exports = {
 
         } catch (error) {
             console.error('Error banning user:', error);
-            return interaction.reply({ content: `There was an error banning ${user.tag}`, ephemeral: true });
+            return interaction.reply({ content: `There was an error banning ${user.tag}`, flags: 64 });
         }
     },
 };

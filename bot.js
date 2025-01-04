@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits, Collection, AuditLogEvent, EmbedBuilder } = require('discord.js');
+const { Client, GatewayIntentBits, Collection, AuditLogEvent, EmbedBuilder, InteractionResponseFlags } = require('discord.js');
 const fs = require('fs');
 require('dotenv').config();
 
@@ -40,14 +40,14 @@ client.on('interactionCreate', async (interaction) => {
 
     const command = commands.get(interaction.commandName);
     if (!command) {
-        return interaction.reply({ content: 'Unknown command!', ephemeral: true });
+        return interaction.reply({ content: 'Unknown command!', flags: 64 });
     }
 
     try {
         await command.execute(interaction, client); // Execute the command
     } catch (error) {
         console.error(`Error executing command ${interaction.commandName}:`, error);
-        interaction.reply({ content: 'An error occurred while executing this command.', ephemeral: true });
+        interaction.reply({ content: 'An error occurred while executing this command.', flags: 64 });
     }
 });
 

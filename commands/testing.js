@@ -24,26 +24,26 @@ module.exports = {
         const role = interaction.options.getRole('role');
 
         if (!user) {
-            return interaction.reply({ content: 'User not found. Please mention a valid user.', ephemeral: true });
+            return interaction.reply({ content: 'User not found. Please mention a valid user.', flags: 64 });
         }
 
         if (!role) {
-            return interaction.reply({ content: 'Role not found. Please select a valid role.', ephemeral: true });
+            return interaction.reply({ content: 'Role not found. Please select a valid role.', flags: 64 });
         }
         
         try {
             const guild = interaction.guild;
             if (!guild) {
-                return interaction.reply({ content: 'This command must be run in a server.', ephemeral: true });
+                return interaction.reply({ content: 'This command must be run in a server.', flags: 64 });
             }
 
             const member = guild.members.cache.get(user.id) || await guild.members.fetch(user.id).catch(() => null);
             if (!member) {
-                return interaction.reply({ content: 'Member not found. Ensure the user is part of this server.', ephemeral: true });
+                return interaction.reply({ content: 'Member not found. Ensure the user is part of this server.', flags: 64 });
             }
 
             if (!role) {
-                return interaction.reply({ content: 'Role not found', ephemeral: true})
+                return interaction.reply({ content: 'Role not found', flags: 64})
             }
 
             await member.roles.add(role)
@@ -51,7 +51,7 @@ module.exports = {
             return interaction.reply({ content: `Gave the ${role.name} role to ${member.user.tag}`});
         } catch (error) {
             console.error('Error adding role to member:', error);
-            return interaction.reply({ content: 'There was an error giving a member a role', ephemeral: true})
+            return interaction.reply({ content: 'There was an error giving a member a role', flags: 64})
         }
     },
 };

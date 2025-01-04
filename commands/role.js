@@ -38,15 +38,15 @@ module.exports = {
             const role = interaction.options.getRole('role');
 
             if (!interaction.member.permissions.has(PermissionFlagsBits.ManageRoles)) {
-                return interaction.reply({ content: 'You do not have permission to use this command.', ephemeral: true });
+                return interaction.reply({ content: 'You do not have permission to use this command.', flags: 64 });
             }
 
             if (!user) {
-                return interaction.reply({ content: 'User does not exist.', ephemeral: true});
+                return interaction.reply({ content: 'User does not exist.', flags: 64});
             }
 
             if (!role) {
-                return interaction.reply({ content: 'Role does not exist.', ephemeral: true});
+                return interaction.reply({ content: 'Role does not exist.', flags: 64});
             }
 
             try {
@@ -54,14 +54,14 @@ module.exports = {
                 const member = await guild.members.fetch(user.id);
 
                 if (member.roles.cache.has(role.id)) {
-                    return interaction.reply({ content: `${user.tag} already has the ${role.name} role.`, ephemeral: true });
+                    return interaction.reply({ content: `${user.tag} already has the ${role.name} role.`, flags: 64 });
                 }
 
                 await member.roles.add(role);
                 return interaction.reply({ content: `Added the ${role.name} role to ${member.user.tag}` });
             } catch (error) {
                 console.error('Error adding role:', error);
-                return interaction.reply({ content: 'There was an error adding the role.', ephemeral: true });
+                return interaction.reply({ content: 'There was an error adding the role.', flags: 64 });
             }
         }
 
@@ -70,15 +70,15 @@ module.exports = {
             const role = interaction.options.getRole('role');
 
             if (!interaction.member.permissions.has(PermissionFlagsBits.ManageRoles)) {
-                return interaction.reply({ content: 'You do not have permission to use this command.', ephemeral: true });
+                return interaction.reply({ content: 'You do not have permission to use this command.', flags: 64 });
             }
 
             if (!user) {
-                return interaction.reply({ content: 'User does not exist.', ephemeral: true});
+                return interaction.reply({ content: 'User does not exist.', flags: 64});
             }
 
             if (!role) {
-                return interaction.reply({ content: 'Role does not exist.', ephemeral: true});
+                return interaction.reply({ content: 'Role does not exist.', flags: 64});
             }
 
             try {
@@ -86,14 +86,14 @@ module.exports = {
                 const member = await guild.members.fetch(user.id);
 
                 if (!member.roles.cache.has(role.id)) {
-                    return interaction.reply({ content: `${user.tag} does not have the ${role.name} role.`, ephemeral: true });
+                    return interaction.reply({ content: `${user.tag} does not have the ${role.name} role.`, flags: 64 });
                 }
 
                 await member.roles.remove(role);
                 return interaction.reply({ content: `Removed the ${role.name} role from ${member.user.tag}` });
             } catch (error) {
                 console.error('Error removing role:', error);
-                return interaction.reply({ content: 'There was an error removing the role.', ephemeral: true });
+                return interaction.reply({ content: 'There was an error removing the role.', flags: 64 });
             }
         }
     },
