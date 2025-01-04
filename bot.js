@@ -52,16 +52,6 @@ client.on('interactionCreate', async (interaction) => {
 });
 
 client.on('messageCreate', async (message) => {
-    if (message.author.bot) return;
-
-    if (message.author.id === '1195248163561414660') {
-        message.reply('stinky');
-    } else {
-        message.reply('white boy');
-    }
-});
-
-client.on('messageCreate', async (message) => {
     const linkChannel = '1319595051160047627';
     if (message.author.bot) return;
 
