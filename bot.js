@@ -24,7 +24,7 @@ for (const file of commandFiles) {
             console.error(`Invalid command structure in file: ${file}`);
             continue;
         }
-        commands.push(command.data.toJSON());
+        commands.set(command.data.name, command); // Use .set() here
     } catch (error) {
         console.error(`Error loading command file ${file}:`, error);
     }
@@ -129,8 +129,8 @@ client.on('guildMemberRemove', async (member) => {
     
     if (joinChannel) {
         try {
-            const auditLogs = await member.guild.fetchAuditLogs({ limit: 1, actionType: 20 }); // 20 is the action type for 'MEMBER_KICK'
-            const banLogs = await member.guild.fetchAuditLogs({ limit: 1, actionType: 22 }); // 22 is the action type for 'MEMBER_BAN'
+            const auditLogs = await member.guild.fetchAuditLogs({ limit: 1, type: AuditLogEvent.MemberKick });
+            const banLogs = await member.guild.fetchAuditLogs({ limit: 1, type: AuditLogEvent.MemberBanAdd }); // 22 is the action type for 'MEMBER_BAN'
 
             let embed;
             const kickEntry = auditLogs.entries.first();
