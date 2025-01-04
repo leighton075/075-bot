@@ -16,6 +16,6 @@ module.exports = {
             result = -result;
         }
 
-        await interaction.reply(`The result of squaring ${number} is ${result}.`);
+        await interaction.reply({ content: `The result of squaring ${number} is ${result}.`, ephemeral: true });
     },
 };
