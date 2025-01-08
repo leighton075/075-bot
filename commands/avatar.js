@@ -30,7 +30,7 @@ module.exports = {
             return interaction.reply({ embeds: [embed], components: [row] });
         } catch (error) {
             console.error('Error getting user\'s avatar:', error);
-            return interaction.reply({ content: 'There was an error getting the user\'s avatar', flags: 64 });
+            return interaction.reply({ content: 'There was an error getting the user\'s avatar', ephemeral: true });
         }
     },
 };

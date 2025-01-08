@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, InteractionResponse } = require('discord.js');
 const axios = require('axios');
 require('dotenv').config();
 
@@ -54,7 +54,7 @@ module.exports = {
                     const inventoryData = inventoryResponse.data;
                     if (!inventoryData || !inventoryData.items || inventoryData.items.length === 0) {
                         console.log('No items found in the inventory data.');
-                        return interaction.reply({ content: 'No items found in the inventory.', flags: 64 });
+                        return interaction.reply({ content: 'No items found in the inventory.', ephemeral: true });
                     }
             
                     console.log('Processing inventory data...');
@@ -106,7 +106,7 @@ module.exports = {
                 } catch (error) {
                     console.error('Error fetching inventory from Steam API:', error.message);
                     console.log('Error details:', error.stack);
-                    await interaction.reply({ content: `Failed to fetch inventory for user ID ${userid}: ${error.message}`, flags: 64 });
+                    await interaction.reply({ content: `Failed to fetch inventory for user ID ${userid}: ${error.message}`, flags: InteractionResponseFlags });
                 }
             }            
             
@@ -116,7 +116,7 @@ module.exports = {
                 const userid = interaction.options.getString('userid');
             
                 if (!userid) {
-                    return interaction.reply({ content: 'Please provide a valid Steam user ID.', flags: 64 });
+                    return interaction.reply({ content: 'Please provide a valid Steam user ID.', ephemeral: true });
                 }
             
                 try {
@@ -151,12 +151,12 @@ module.exports = {
                     await interaction.reply({ embeds: [embed] });
                 } catch (error) {
                     console.error('Error fetching Steam profile:', error.message);
-                    await interaction.reply({ content: `Failed to fetch profile for user ID ${userid}: ${error.message}`, flags: 64 });
+                    await interaction.reply({ content: `Failed to fetch profile for user ID ${userid}: ${error.message}`, ephemeral: true });
                 }
             }            
         } catch (error) {
             console.error(`Error fetching Steam data: ${error.message}`);
-            await interaction.reply({ content: `Failed to fetch data for user ID ${userid}: ${error.message}`, flags: 64 });
+            await interaction.reply({ content: `Failed to fetch data for user ID ${userid}: ${error.message}`, ephemeral: true });
         }
     },
 };

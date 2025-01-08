@@ -49,7 +49,7 @@ module.exports = {
                 const videoIdMatch = url.match(/(?:v=|\/)([0-9A-Za-z_-]{11})(?:[?&]|$)|youtu\.be\/([0-9A-Za-z_-]{11})/);
                 if (!videoIdMatch) {
                     console.error('Invalid YouTube video URL:', url);
-                    return interaction.reply({ content: 'Invalid YouTube video URL.', flags: 64 });
+                    return interaction.reply({ content: 'Invalid YouTube video URL.', ephemeral: true });
                 }
 
                 const videoId = videoIdMatch[1] || videoIdMatch[2];
@@ -64,7 +64,7 @@ module.exports = {
                 const video = response.data.items[0];
                 if (!video) {
                     console.error('Video not found for ID:', videoId);
-                    return interaction.reply({ content: 'Video not found.', flags: 64 });
+                    return interaction.reply({ content: 'Video not found.', ephemeral: true });
                 }
         
                 const formattedDuration = formatDuration(video.contentDetails.duration);
@@ -85,7 +85,7 @@ module.exports = {
                 });
             } catch (error) {
                 console.error('Error fetching video information:', error);
-                return interaction.reply({ content: 'An error occurred while fetching video information.', flags: 64 });
+                return interaction.reply({ content: 'An error occurred while fetching video information.', ephemeral: true });
             }
         }
 
@@ -122,7 +122,7 @@ module.exports = {
         
                 if (!channelId) {
                     console.error('Could not extract a valid channel identifier from the URL:', url);
-                    return interaction.reply({ content: 'Invalid YouTube channel URL.', flags: 64 });
+                    return interaction.reply({ content: 'Invalid YouTube channel URL.', ephemeral: true });
                 }
         
                 const response = await youtube.channels.list({
@@ -134,7 +134,7 @@ module.exports = {
                 const channel = response.data.items[0];
                 if (!channel) {
                     console.error('Channel not found for ID:', channelId);
-                    return interaction.reply({ content: 'Channel not found.', flags: 64 });
+                    return interaction.reply({ content: 'Channel not found.', ephemeral: true });
                 }
         
                 console.log('Channel information retrieved successfully:', channel);
@@ -152,7 +152,7 @@ module.exports = {
                 });
             } catch (error) {
                 console.error('Error fetching channel information:', error);
-                return interaction.reply({ content: 'An error occurred while fetching channel information.', flags: 64 });
+                return interaction.reply({ content: 'An error occurred while fetching channel information.', ephemeral: true });
             }
         }        
     },

@@ -19,7 +19,7 @@ module.exports = {
         const reason = interaction.options.getString('reason') || 'No reason provided';
 
         try {
-            await interaction.reply({ content: `Kicking user ${user.tag}...`, flags: 64 });
+            await interaction.reply({ content: `Kicking user ${user.tag}...`, ephemeral: true });
 
             await interaction.guild.members.kick(user, { reason });
 
@@ -27,7 +27,7 @@ module.exports = {
 
         } catch (error) {
             console.error('Error kicking user:', error);
-            return interaction.reply({ content: `There was an error kicking ${user.tag}`, flags: 64 });
+            return interaction.reply({ content: `There was an error kicking ${user.tag}`, ephemeral: true });
         }
     },
 };

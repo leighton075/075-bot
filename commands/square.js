@@ -16,6 +16,6 @@ module.exports = {
             result = -result;
         }
 
-        await interaction.reply({ content: `The result of squaring ${number} is ${result}.`, flags: 64 });
+        await interaction.reply({ content: `The result of squaring ${number} is ${result}.` });
     },
 };

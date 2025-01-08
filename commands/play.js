@@ -22,7 +22,7 @@ module.exports = {
         let hasReplied = false;
 
         if (!voiceChannel) {
-            return interaction.reply({ content: 'You need to join a voice channel first!', flags: 64 }); // Ephemeral response
+            return interaction.reply({ content: 'You need to join a voice channel first!', ephemeral: true }); // Ephemeral response
         }
 
         try {
@@ -40,7 +40,7 @@ module.exports = {
 
             if (!fs.existsSync(filePath)) {
                 console.error('File not found:', filePath);
-                return interaction.followUp({ content: 'Sound file not found.', flags: 64 }); // Ephemeral response
+                return interaction.followUp({ content: 'Sound file not found.', ephemeral: true }); // Ephemeral response
             }
 
             const resource = createAudioResource(fs.createReadStream(filePath));
@@ -52,7 +52,7 @@ module.exports = {
             player.on(AudioPlayerStatus.Playing, () => {
                 if (!hasReplied) {
                     console.log('Audio is now playing.');
-                    interaction.followUp({ content: `Now playing: ${sound}`, flags: 64 }); // Ephemeral response
+                    interaction.followUp({ content: `Now playing: ${sound}`, ephemeral: true }); // Ephemeral response
                     hasReplied = true;
                 }
             });
@@ -69,7 +69,7 @@ module.exports = {
 
         } catch (error) {
             console.error('Error occurred during audio playback:', error);
-            return interaction.followUp({ content: 'There was an error playing the sound.', flags: 64 }); // Ephemeral response
+            return interaction.followUp({ content: 'There was an error playing the sound.', ephemeral: true }); // Ephemeral response
         }
     },
 };

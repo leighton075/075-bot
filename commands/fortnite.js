@@ -65,7 +65,7 @@ module.exports = {
             const playerName = interaction.options.getString('player');
             
             if (!playerName) {
-                return interaction.reply({ content: 'Please provide a valid Fortnite username.', flags: 64 });
+                return interaction.reply({ content: 'Please provide a valid Fortnite username.', ephemeral: true });
             }
 
             try {
