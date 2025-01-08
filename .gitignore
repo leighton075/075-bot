@@ -22,3 +22,6 @@ build/
 .DS_Store
 *.swp
 Thumbs.db
+
+# Eslint configurations
+eslint.config.js
