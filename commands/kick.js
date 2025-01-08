@@ -1,15 +1,17 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('kick')
         .setDescription('Kick a user')
         .addUserOption(option =>
-            option.setName('user')
+            option
+                .setName('user')
                 .setDescription('User to kick')
                 .setRequired(true))
         .addStringOption(option =>
-            option.setName('reason')
+            option
+                .setName('reason')
                 .setDescription('Reason for kick')
                 .setRequired(false))
         .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers),
@@ -18,16 +20,55 @@ module.exports = {
         const user = interaction.options.getUser('user');
         const reason = interaction.options.getString('reason') || 'No reason provided';
 
+        const confirm = new ButtonBuilder()
+            .setCustomId('confirm')
+            .setLabel('Confirm Kick')
+            .setStyle(ButtonStyle.Danger);
+
+        const cancel = new ButtonBuilder()
+            .setCustomId('cancel')
+            .setLabel('Cancel')
+            .setStyle(ButtonStyle.Secondary);
+
+        const row = new ActionRowBuilder()
+            .addComponents(cancel, confirm);
+
         try {
-            await interaction.reply({ content: `Kicking user ${user.tag}...`, ephemeral: true });
+            await interaction.reply({
+                content: `Are you sure you want to kick ${user.tag} for reason: ${reason}?`,
+                components: [row],
+            });
 
-            await interaction.guild.members.kick(user, { reason });
+            const filter = i => i.user.id === interaction.user.id;
+            const collector = interaction.channel.createMessageComponentCollector({
+                filter,
+                time: 10000,
+            });
 
-            await interaction.followUp({ content: `${user.tag} has been kicked. Reason: ${reason}` });
+            collector.on('collect', async i => {
+                if (i.customId === 'confirm') {
+                    try {
+                        await interaction.guild.members.kick(user, { reason });
+
+                        await i.update({ content: `${user.tag} has been kicked. Reason: ${reason}`, components: [] });
+                    } catch (error) {
+                        console.error('Error kicking user:', error);
+                        await i.update({ content: `There was an error kicking ${user.tag}`, components: [] });
+                    }
+                } else if (i.customId === 'cancel') {
+                    await i.update({ content: 'Kick action has been canceled.', components: [] });
+                }
+            });
+
+            collector.on('end', (collected, reason) => {
+                if (reason === 'time') {
+                    interaction.editReply({ content: 'You took too long to respond. Kick action canceled.', components: [] });
+                }
+            });
 
         } catch (error) {
-            console.error('Error kicking user:', error);
-            return interaction.reply({ content: `There was an error kicking ${user.tag}`, ephemeral: true });
+            console.error('Error during kick process:', error);
+            return interaction.reply({ content: `There was an error with the kick process.`, ephemeral: true });
         }
     },
 };
