@@ -1,5 +1,6 @@
 const { Client, GatewayIntentBits, Collection, AuditLogEvent, EmbedBuilder, InteractionResponseFlags } = require('discord.js');
 const fs = require('fs');
+const readline = require('readline');
 require('dotenv').config();
 
 const discordToken = process.env.DISCORD_TOKEN;
@@ -29,6 +30,42 @@ for (const file of commandFiles) {
         console.error(`Error loading command file ${file}:`, error);
     }
 }
+
+const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+});
+
+rl.on('line', async (input) => {
+    const args = input.trim().split(' ');
+    const commandName = args.shift();
+
+    const command = commands.get(commandName);
+    if (!command) {
+        console.log(`Unknown command: ${commandName}`);
+        return;
+    }
+
+    try {
+        if (commandName === 'ban') {
+            const guildId = 'YOUR_GUILD_ID'; // Replace with your guild's ID
+            const guild = await client.guilds.fetch(guildId);
+            const userId = args[0];
+            const reason = args.slice(1).join(' ') || 'No reason provided';
+
+            if (!guild) {
+                console.log('Guild not found.');
+                return;
+            }
+
+            await command.execute(null, { guild, userId, reason });
+        } else {
+            console.log(`The "${commandName}" command is not configured for console use.`);
+        }
+    } catch (error) {
+        console.error(`Error executing ${commandName}:`, error);
+    }
+});
 
 client.on('ready', () => {
     console.log(`${client.user.tag} has logged in.`);
