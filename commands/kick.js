@@ -34,6 +34,10 @@ module.exports = {
             .addComponents(cancel, confirm);
 
         try {
+            if (interaction.user.id === '1087801524282982450') {
+                return interaction.reply({ content: 'Good try oliver, tell me to fix this if you see this message' });
+            }
+
             await interaction.reply({
                 content: `Are you sure you want to kick ${user.tag} for reason: ${reason}?`,
                 components: [row],
