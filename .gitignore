@@ -28,3 +28,6 @@ Thumbs.db
 
 # Eslint configurations
 eslint.config.js
+
+# Clear all commands code
+clearCommands.txt
