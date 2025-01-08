@@ -54,7 +54,13 @@ module.exports = {
                     try {
                         await interaction.guild.members.ban(user, { reason });
 
-                        await i.update({ content: `${user.tag} has been banned. Reason: ${reason}`, components: [] });
+                        const embed = new EmbedBuilder()
+                            .setColor('#ff0000')
+                            .setTitle(`${user.tag} has been banned.`)
+                            .setDescription(`Banned by ${interaction.user.username}`)
+                            .setFooter({ text: `Reason for ban: ${reason}`, iconURL: interaction.user.displayAvatarURL() });
+
+                        await i.update({embeds: [embed], components: []});
                     } catch (error) {
                         console.error('Error banning user:', error);
                         await i.update({ content: `There was an error banning ${user.tag}`, components: [] });

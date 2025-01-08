@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, ButtonBuilder, ButtonStyle, ActionRowBuilder, Embed, EmbedBuilder } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -53,8 +53,14 @@ module.exports = {
                 if (i.customId === 'confirm') {
                     try {
                         await interaction.guild.members.kick(user, { reason });
+                        
+                        const embed = new EmbedBuilder()
+                            .setColor('#ff0000')
+                            .setTitle(`${user.tag} has been kicked.`)
+                            .setDescription(`Kicked by ${interaction.user.username}`)
+                            .setFooter({ text: `Reason for kick: ${reason}`, iconURL: interaction.user.displayAvatarURL() });
 
-                        await i.update({ content: `${user.tag} has been kicked. Reason: ${reason}`, components: [] });
+                        await i.update({embeds: [embed], components: []});
                     } catch (error) {
                         console.error('Error kicking user:', error);
                         await i.update({ content: `There was an error kicking ${user.tag}`, components: [] });
