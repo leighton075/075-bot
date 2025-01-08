@@ -10,15 +10,16 @@ module.exports = {
                 .setRequired(false)),
 
     async execute(interaction) {
-        const user = interaction.options.getUser('user') || interaction.user;
-
-        const avatarURL = user.displayAvatarURL({ size: 1024, dynamic: true });
-
         try {
+            const user = interaction.options.getUser('user') || interaction.user;
+
+            const avatarURL = user.displayAvatarURL({ size: 1024, dynamic: true });
+
             const embed = new EmbedBuilder()
                 .setColor('#cb668b')
                 .setTitle(`${user.username}'s avatar:`)
                 .setImage(avatarURL)
+                .setFooter({ text: `Requested by ${interaction.user.username}`, iconURL: interaction.user.displayAvatarURL() });
 
             const button = new ButtonBuilder()
                 .setLabel('Open in Browser')
