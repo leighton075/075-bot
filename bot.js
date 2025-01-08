@@ -1,6 +1,7 @@
-const { Client, GatewayIntentBits, Collection, AuditLogEvent, EmbedBuilder } = require('discord.js');
-const fs = require('fs');
-const readline = require('readline');
+const { Client, GatewayIntentBits, Collection, AuditLogEvent, EmbedBuilder, Events } = require('discord.js');
+const { clientId, guildId, token } = require('./config.json');
+const fs = require('node:fs');
+const path = require('node:path');
 require('dotenv').config();
 
 const discordToken = process.env.DISCORD_TOKEN;
@@ -36,8 +37,9 @@ client.on('ready', () => {
     console.log(`Loaded ${commandFiles.length} commands locally.`);
 });
 
-client.on('interactionCreate', async (interaction) => {
-    if (!interaction.isCommand()) return;
+client.on(Events.InteractionCreate, async (interaction) => {
+    if (!interaction.isChatInputCommand()) return;
+    console.log(interaction);
 
     const command = commands.get(interaction.commandName);
     if (!command) {
@@ -52,7 +54,7 @@ client.on('interactionCreate', async (interaction) => {
     }
 });
 
-client.on('messageCreate', async (message) => {
+client.on(Events.MessageCreate, async (message) => {
     const linkChannel = '1319595051160047627';
     if (message.author.bot) return;
 
@@ -95,7 +97,7 @@ client.on('messageCreate', async (message) => {
     }
 });
 
-client.on('guildMemberAdd', async (member) => {
+client.on(Events.GuildMemberAdd, async (member) => {
     console.log(`${member.user.tag} has joined the server!`);
 
     const joinChannel = member.guild.channels.cache.find(ch => ch.name === 'joins-bans');
@@ -123,7 +125,7 @@ client.on('guildMemberAdd', async (member) => {
     }
 });
 
-client.on('guildMemberRemove', async (member) => {
+client.on(Events.GuildMemberRemove, async (member) => {
     console.log(`${member.user.tag} has left the server!`);
 
     const joinChannel = member.guild.channels.cache.find(ch => ch.name === 'joins-bans');
@@ -179,4 +181,4 @@ client.on('guildMemberRemove', async (member) => {
     }
 });
 
-client.login(discordToken);
+client.login(token);
