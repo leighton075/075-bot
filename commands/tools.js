@@ -180,6 +180,7 @@ module.exports = {
                 const fileName = path.basename(mediaUrl.pathname);
                 console.log(`[INFO] Media URL parsed successfully. Filename: ${fileName}`);
 
+                // Ensure the downloads directory exists
                 const downloadsDir = path.join(__dirname, 'downloads');
                 if (!fs.existsSync(downloadsDir)) {
                     fs.mkdirSync(downloadsDir, { recursive: true });
@@ -194,11 +195,16 @@ module.exports = {
                     throw new Error(`Failed to fetch media. Status: ${response.status}`);
                 }
 
-                const filePath = path.join(__dirname, 'downloads', fileName);
+                const filePath = path.join(downloadsDir, fileName);
                 console.log(`[INFO] Saving media to local file: ${filePath}`);
 
+                // Ensure data is a stream
+                if (!response.data || typeof response.data.pipe !== 'function') {
+                    throw new Error('Response data is not a stream');
+                }
+
                 const fileStream = createWriteStream(filePath);
-                response.body.pipe(fileStream);
+                response.data.pipe(fileStream);
 
                 fileStream.on('finish', async () => {
                     console.log(`[INFO] File download completed: ${filePath}`);
