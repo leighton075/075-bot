@@ -384,7 +384,6 @@ module.exports = {
                                 const seconds = Math.floor(duration % 60);
                                 const formattedDuration = `${minutes}m ${seconds}s`;
 
-                                // Send the extracted audio
                                 interaction.editReply({
                                     content: 'Audio extraction complete!',
                                     files: [{
@@ -393,7 +392,6 @@ module.exports = {
                                     }],
                                 });
 
-                                // Send embed with audio details
                                 const embed = new EmbedBuilder()
                                     .setColor('#ff0000')
                                     .setTitle('Audio Extracted Successfully')
@@ -406,10 +404,22 @@ module.exports = {
                                 interaction.followUp({
                                     embeds: [embed],
                                 });
-
-                                // Clean up by deleting downloaded video and audio files
-                                fs.unlinkSync(filePath);
-                                fs.unlinkSync(audioFilePath);
+                                setTimeout(() => {
+                                    fs.unlink(filePath, (err) => {
+                                        if (err) {
+                                            console.error(`[ERROR] Error deleting the file: ${err.message}`);
+                                        } else {
+                                            console.log(`[INFO] File deleted successfully: ${filePath}`);
+                                        }
+                                    });
+                                    fs.unlink(audioFilePath, (err) => {
+                                        if (err) {
+                                            console.error(`[ERROR] Error deleting the file: ${err.message}`);
+                                        } else {
+                                            console.log(`[INFO] File deleted successfully: ${audioFilePath}`);
+                                        }
+                                    });
+                                }, 2000);                               
                             });
                         });
                     })
