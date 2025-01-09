@@ -49,11 +49,17 @@ module.exports = {
             for (const item of items) {
                 if (item.links && item.links.length > 0) {
                     console.log(`Found ${item.links.length} links in this item`);
-
+            
                     if (subcommand === 'advanced') {
                         console.log(`Filtering 404 and 403 links for advanced search`);
                         for (const link of item.links) {
                             console.log(`Checking link: ${link}`);
+                            // Skip if link contains 'discord.com'
+                            if (link.includes('discord.com')) {
+                                console.log(`Skipping link due to discord.com: ${link}`);
+                                continue;
+                            }
+            
                             const isValidLink = await checkLink(link);
                             if (isValidLink) {
                                 results.push(link);
@@ -63,13 +69,15 @@ module.exports = {
                             }
                         }
                     } else {
-                        results.push(...item.links);
-                        console.log(`Added links to results: ${item.links}`);
+                        // Filter out links containing 'discord.com'
+                        const validLinks = item.links.filter(link => !link.includes('discord.com'));
+                        results.push(...validLinks);
+                        console.log(`Added valid links to results: ${validLinks}`);
                     }
                 } else {
                     console.log('No links found in this item');
                 }
-            }
+            }            
 
             let responseEmbed;
             if (results.length > 0) {
