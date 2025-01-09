@@ -91,7 +91,7 @@ module.exports = {
                     .setColor('#cb668b')
                     .setTitle(url)
                     .setImage('attachment://screenshot.png')
-                    .setFooter(`1920x1080, ${imgSize}kb, took ${executionTime} seconds`);
+                    .setFooter({ text: `1920x1080, ${imgSize}kb, took ${executionTime} seconds` });
         
                 await interaction.editReply({
                     embeds: [embed],
