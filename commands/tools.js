@@ -6,6 +6,8 @@ const path = require('path');
 const { createWriteStream } = require('fs');
 const { URL } = require('url');
 const sharp = require('sharp');
+const ffmpeg = require('fluent-ffmpeg');
+const { stream } = require('winston');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -161,7 +163,27 @@ module.exports = {
                     });
                 }
             }
-        }        
+        }
+        
+        async function getVideoFrames(filePath) {
+            return new Promise((resolve, reject) => {
+                ffmpeg.ffprobe(filePath, (err, metadata) => {
+                    if (err) {
+                        return reject('Error reading video metadata');
+                    }
+
+                    const videoStream = metadata.streams.find(stream => stream.codec_type === 'video');
+                    if (!videoStream) {
+                        return reject('No video stream found in file');
+                    }
+                    
+                    const frameRate = eval(videoStream.r_frame_rate);
+                    const duration = metadata.format.duration;
+                    const totalFrames = Math.round(frameRate * duration);
+                    resolve(totalFrames);
+                });
+            });
+        }
 
         if (subcommand === 'download') {
             const url = interaction.options.getString('url');
@@ -257,9 +279,15 @@ module.exports = {
                             });
         
                     } else if (isVideo) {
-                        embed.setFooter({
-                                text: `Video Size: ${fileSizeInKB}KB, Took: ${executionTime} seconds`,
+                        try {
+                            const totalFrames = await getVideoFrames(filePath);
+                            console.log(`[INFO] Video total frames: ${totalFrames}`);
+                            embed.setFooter({
+                                text: `Video Size: ${fileSizeInKB}KB, Total Frames: ${totalFrames}, Took: ${executionTime} seconds`,
                             });
+                        } catch (frameError) {
+                            console.error(`[ERROR] Error calculating video frames: ${frameError}`);
+                        }
                     }
         
                     await interaction.editReply({
