@@ -351,11 +351,9 @@ module.exports = {
                     .on('end', async () => {
                         console.log('[INFO] Audio extraction complete');
 
-                        // Get the audio file size
-                        const audioFileStats = statSync(audioFilePath);
+                        const audioFileStats = fs.statSync(audioFilePath);
                         const audioSizeInKB = (audioFileStats.size / 1024).toFixed(2); // Size in KB
 
-                        // Get the audio duration
                         ffmpeg.ffprobe(audioFilePath, (err, metadata) => {
                             if (err) {
                                 console.error('[ERROR] Error fetching audio metadata:', err);
@@ -367,7 +365,6 @@ module.exports = {
                             const seconds = Math.floor(duration % 60);
                             const formattedDuration = `${minutes}m ${seconds}s`;
 
-                            // Send the audio file to the user
                             interaction.editReply({
                                 content: 'Audio extraction complete!',
                                 files: [{
@@ -376,7 +373,6 @@ module.exports = {
                                 }],
                             });
 
-                            // Create an embed with the audio details
                             const embed = new EmbedBuilder()
                                 .setColor('#ff0000')
                                 .setTitle('Audio Extracted Successfully')
@@ -390,9 +386,8 @@ module.exports = {
                                 embeds: [embed],
                             });
 
-                            // Clean up the video and audio files after sending
-                            unlinkSync(filePath);
-                            unlinkSync(audioFilePath);
+                            fs.unlinkSync(filePath);
+                            fs.unlinkSync(audioFilePath);
                         });
                     })
                     .on('error', (err) => {
