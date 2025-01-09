@@ -35,6 +35,14 @@ module.exports = {
                 .addStringOption(option =>
                     option.setName('url')
                         .setDescription('Url to download media from')
+                        .setRequired(true)))
+        .addSubcommand(subcommand => 
+            subcommand
+                .setName('extract')
+                .setDescription('Extract audio from a url')
+                .addStringOption(option => 
+                    option.setName('url')
+                        .setDescription('Url of video to extract audio from')
                         .setRequired(true))),
         
     async execute(interaction) {
@@ -317,8 +325,54 @@ module.exports = {
                     content: 'An error occurred while downloading the media. Please check the URL and try again.',
                 });
             }
-        }        
-                     
+        }    
+        
+        if (subcommand === 'extract') {
+            const url = interaction.options.getString('url');
+            const fileName = path.basename(url);
+            const filePath = path.join(__dirname, 'downloads', fileName);
+            audioFilePath = path.join(__dirname, 'downloads', 'audio.mp3');
+
+            try {
+                await interaction.reply({ content: 'Downloading video... Please wait.' });
+
+                const response = await axios.get(url, { responseType: 'stream' });
+                const videoStream = response.data;
+                const videoWriteStream = createWriteStream(filePath);
+
+                videoStream.pipe(videoWriteStream);
+
+                videoWriteStream.on('finish', async () => {
+                    console.log('[INFO] Video downloaded successfully');
+
+                    ffmpeg(filePath)
+                        .output(audioFilePath)
+                        .audioCodec('libmp3lame')
+                        .on('end', async () => {
+                            console.log('[INFO] Audio extraction complete');
+
+                            await interaction.editReply({
+                                content: 'Audio extraction complete',
+                                files: [{
+                                    attachment: audioFilePath,
+                                    name: 'audio.mp3',
+                                }],
+                            });
+
+                            fs.unlinkSync(filePath);
+                            fs.unlinkSync(audioFilePath);
+                        })
+                        .on('error', (err) => {
+                            console.error('[ERROR] Error extracting audio:', err);
+                            interaction.editReply({ content: 'There was an error extracting the audio' });
+                        })
+                        .run();
+                });
+            } catch (error) {
+                console.error('[ERROR] Error downloading the video:', error);
+                await interaction.reply({ content: 'There was an error downloading the video. Check URL and try again.' });
+            }
+        }         
         const endTime = Date.now();
         console.log(`[INFO] Command execution completed in ${(endTime - startTime) / 1000}s`);
     },
