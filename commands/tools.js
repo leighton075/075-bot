@@ -71,9 +71,13 @@ module.exports = {
                     throw new Error('Screenshot buffer is invalid.');
                 }
 
+                // Resize screenshot directly without saving to a file
+                const resizeStartTime = Date.now();
                 const resizedScreenshotBuffer = await sharp(screenshotBuffer)
                     .resize(1920, 1080)
                     .toBuffer();
+                const resizeEndTime = Date.now();
+                console.log(`[INFO] Screenshot resized in ${(resizeEndTime - resizeStartTime) / 1000}s`);
 
                 const captureEndTime = Date.now();
                 executionTime = ((captureEndTime - captureStartTime) / 1000).toFixed(2);
@@ -84,10 +88,9 @@ module.exports = {
                     .setColor('#cb668b')
                     .setTitle(url)
                     .setImage('attachment://screenshot.png')
-                    .setFooter(`1920x1080, ${imgSize}kb, took ${executionTime} seconds`)
+                    .setFooter(`1920x1080, ${imgSize}kb, took ${executionTime} seconds`);
 
                 await interaction.editReply({
-                    content: 'Here is the screenshot:',
                     embeds: [embed],
                     files: [{ attachment: resizedScreenshotBuffer, name: 'screenshot.png' }],
                 });
@@ -95,15 +98,15 @@ module.exports = {
         
             } catch (error) {
                 console.error(`[ERROR] Error capturing screenshot: ${error.message}`);
-
                 if (screenshotBuffer) {
                     try {
-                        const tempFilePath = path.join(__dirname, 'temp_screenshot.png');
-                        fs.writeFileSync(tempFilePath, screenshotBuffer);
-
-                        const resizedScreenshotBuffer = await sharp(tempFilePath)
+                        // Process fallback with buffer directly
+                        const fallbackStartTime = Date.now();
+                        const resizedScreenshotBuffer = await sharp(screenshotBuffer)
                             .resize(1920, 1080)
                             .toBuffer();
+                        const fallbackEndTime = Date.now();
+                        console.log(`[INFO] Screenshot resized in ${(fallbackEndTime - fallbackStartTime) / 1000}s`);
 
                         const embed = new EmbedBuilder()
                             .setColor('#0099ff')
@@ -116,7 +119,6 @@ module.exports = {
                             embeds: [embed],
                             files: [{ attachment: resizedScreenshotBuffer, name: 'screenshot.png' }],
                         });
-                        fs.unlinkSync(tempFilePath);
                     } catch (fallbackError) {
                         console.error(`[ERROR] Fallback file handling failed: ${fallbackError.message}`);
                         await interaction.editReply({
@@ -129,7 +131,7 @@ module.exports = {
                     });
                 }
             }
-        }        
+        }
 
         if (subcommand === 'download') {
             const url = interaction.options.getString('url');
