@@ -332,75 +332,97 @@ module.exports = {
             const fileName = path.basename(url);
             const filePath = path.join(__dirname, 'downloads', fileName);
             const audioFilePath = path.join(__dirname, 'downloads', 'audio.mp3');
-
+            const downloadDir = path.join(__dirname, 'downloads');
+        
             try {
                 await interaction.reply({ content: 'Downloading video... Please wait.' });
-
+        
+                // Ensure the 'downloads' directory exists
+                if (!fs.existsSync(downloadDir)) {
+                    fs.mkdirSync(downloadDir, { recursive: true });
+                    console.log('[INFO] Created "downloads" directory.');
+                }
+        
                 const response = await axios.get(url, { responseType: 'stream' });
                 const videoStream = response.data;
                 const videoWriteStream = createWriteStream(filePath);
-
+        
                 videoStream.pipe(videoWriteStream);
-
+        
                 videoWriteStream.on('finish', async () => {
                     console.log('[INFO] Video downloaded successfully');
-
+        
+                    // Now extract audio using ffmpeg
                     ffmpeg(filePath)
-                    .output(audioFilePath)
-                    .audioCodec('libmp3lame')
-                    .on('end', async () => {
-                        console.log('[INFO] Audio extraction complete');
-
-                        const audioFileStats = fs.statSync(audioFilePath);
-                        const audioSizeInKB = (audioFileStats.size / 1024).toFixed(2); // Size in KB
-
-                        ffmpeg.ffprobe(audioFilePath, (err, metadata) => {
-                            if (err) {
-                                console.error('[ERROR] Error fetching audio metadata:', err);
-                                return interaction.reply({ content: 'There was an error fetching audio metadata.' });
-                            }
-
-                            const duration = metadata.format.duration;
-                            const minutes = Math.floor(duration / 60);
-                            const seconds = Math.floor(duration % 60);
-                            const formattedDuration = `${minutes}m ${seconds}s`;
-
-                            interaction.editReply({
-                                content: 'Audio extraction complete!',
-                                files: [{
-                                    attachment: audioFilePath,
-                                    name: 'audio.mp3',
-                                }],
+                        .output(audioFilePath)
+                        .audioCodec('libmp3lame')
+                        .on('end', async () => {
+                            console.log('[INFO] Audio extraction complete');
+        
+                            // Ensure the audio file exists before proceeding
+                            fs.access(audioFilePath, fs.constants.F_OK, async (err) => {
+                                if (err) {
+                                    console.error(`[ERROR] Audio file does not exist: ${audioFilePath}`);
+                                    return interaction.editReply({ content: 'An error occurred during audio extraction.' });
+                                }
+        
+                                // Fetch audio file stats
+                                const audioFileStats = fs.statSync(audioFilePath);
+                                const audioSizeInKB = (audioFileStats.size / 1024).toFixed(2); // Size in KB
+        
+                                // Get the duration of the audio
+                                ffmpeg.ffprobe(audioFilePath, (err, metadata) => {
+                                    if (err) {
+                                        console.error('[ERROR] Error fetching audio metadata:', err);
+                                        return interaction.reply({ content: 'There was an error fetching audio metadata.' });
+                                    }
+        
+                                    const duration = metadata.format.duration;
+                                    const minutes = Math.floor(duration / 60);
+                                    const seconds = Math.floor(duration % 60);
+                                    const formattedDuration = `${minutes}m ${seconds}s`;
+        
+                                    // Send the extracted audio
+                                    interaction.editReply({
+                                        content: 'Audio extraction complete!',
+                                        files: [{
+                                            attachment: audioFilePath,
+                                            name: 'audio.mp3',
+                                        }],
+                                    });
+        
+                                    // Send embed with audio details
+                                    const embed = new EmbedBuilder()
+                                        .setColor('#ff0000')
+                                        .setTitle('Audio Extracted Successfully')
+                                        .addFields(
+                                            { name: 'Duration', value: formattedDuration, inline: true },
+                                            { name: 'Size', value: `${audioSizeInKB} KB`, inline: true }
+                                        )
+                                        .setFooter({ text: 'Audio extracted using FFmpeg' });
+        
+                                    interaction.followUp({
+                                        embeds: [embed],
+                                    });
+        
+                                    // Clean up by deleting downloaded video and audio files
+                                    fs.unlinkSync(filePath);
+                                    fs.unlinkSync(audioFilePath);
+                                });
                             });
-
-                            const embed = new EmbedBuilder()
-                                .setColor('#ff0000')
-                                .setTitle('Audio Extracted Successfully')
-                                .addFields(
-                                    { name: 'Duration', value: formattedDuration, inline: true },
-                                    { name: 'Size', value: `${audioSizeInKB} KB`, inline: true }
-                                )
-                                .setFooter({ text: 'Audio extracted using FFmpeg' });
-
-                            interaction.followUp({
-                                embeds: [embed],
-                            });
-
-                            fs.unlinkSync(filePath);
-                            fs.unlinkSync(audioFilePath);
-                        });
-                    })
-                    .on('error', (err) => {
-                        console.error('[ERROR] Error extracting audio:', err);
-                        interaction.editReply({ content: 'There was an error extracting the audio.' });
-                    })
-                    .run();
-            });
+                        })
+                        .on('error', (err) => {
+                            console.error('[ERROR] Error extracting audio:', err);
+                            interaction.editReply({ content: 'There was an error extracting the audio.' });
+                        })
+                        .run();
+                });
+        
             } catch (error) {
                 console.error('[ERROR] Error downloading the video:', error);
                 await interaction.reply({ content: 'There was an error downloading the video. Check URL and try again.' });
             }
-        }         
+        }        
         const endTime = Date.now();
         console.log(`[INFO] Command execution completed in ${(endTime - startTime) / 1000}s`);
     },
