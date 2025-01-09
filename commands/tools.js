@@ -170,7 +170,7 @@ module.exports = {
 
         if (subcommand === 'download') {
             const url = interaction.options.getString('url');
-            console.log(`[INFO] Download URL: ${url}`);
+            console.log(`[DEBUG] Download URL: ${url}`);
             
             await interaction.reply({ content: 'Downloading media... Please wait.' });
             console.log(`[INFO] User notified about the download process`);
@@ -178,7 +178,7 @@ module.exports = {
             try {
                 const mediaUrl = new URL(url);
                 const fileName = path.basename(mediaUrl.pathname);
-                console.log(`[INFO] Media URL parsed successfully. Filename: ${fileName}`);
+                console.log(`[DEBUG] Media URL parsed successfully. Filename: ${fileName}`);
 
                 const downloadsDir = path.join(__dirname, 'downloads');
                 if (!fs.existsSync(downloadsDir)) {
@@ -195,7 +195,7 @@ module.exports = {
                 }
 
                 const filePath = path.join(downloadsDir, fileName);
-                console.log(`[INFO] Saving media to local file: ${filePath}`);
+                console.log(`[DEBUG] Saving media to local file: ${filePath}`);
 
                 if (!response.data || typeof response.data.pipe !== 'function') {
                     throw new Error('Response data is not a stream');
@@ -207,10 +207,18 @@ module.exports = {
                 fileStream.on('finish', async () => {
                     console.log(`[INFO] File download completed: ${filePath}`);
 
+                    if (fs.existsSync(filePath)) {
+                        console.log(`[DEBUG] File exists at ${filePath}`);
+                    } else {
+                        console.error(`[ERROR] File does not exist after download!`);
+                    }
+
                     const embed = new EmbedBuilder()
                         .setColor('#0099ff')
                         .setTitle('Here is your downloaded media:')
                         .setImage('attachment://' + fileName);
+
+                    console.log(`[DEBUG] Embed being created with image attachment: attachment://${fileName}`);
 
                     await interaction.editReply({
                         content: 'Here is your downloaded media:',
