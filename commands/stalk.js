@@ -31,29 +31,47 @@ module.exports = {
         const results = [];
 
         const subcommand = interaction.options.getSubcommand();
+        console.log(`Subcommand: ${subcommand}`);
 
         try {
+            console.log(`Replying to user: Searching for username: ${username}`);
             await interaction.reply({ content: `Searching for username: **${username}**...` });
 
-            const runInput = { "usernames": [username] }
+            const runInput = { "usernames": [username] };
+            console.log('Running actor with input:', runInput);
             const run = await client.actor('netmilk/sherlock').call(runInput);
+            console.log('Actor run completed, run data:', run);
 
             const dataset = client.dataset(run.defaultDatasetId);
+            console.log(`Dataset ID: ${run.defaultDatasetId}`);
 
             const { items } = await dataset.listItems();
+            console.log(`Fetched ${items.length} items from dataset`);
 
             for (const item of items) {
+                console.log(`Processing item: ${JSON.stringify(item)}`);
+
                 if (item.links && item.links.length > 0) {
+                    console.log(`Found ${item.links.length} links in this item`);
+
                     if (subcommand === 'advanced') {
+                        console.log(`Filtering 404 links for advanced search`);
                         for (const link of item.links) {
+                            console.log(`Checking link: ${link}`);
                             const isValidLink = await checkLink(link);
                             if (isValidLink) {
                                 results.push(link);
+                                console.log(`Valid link found: ${link}`);
+                            } else {
+                                console.log(`Invalid link (404): ${link}`);
                             }
                         }
                     } else {
                         results.push(...item.links);
+                        console.log(`Added links to results: ${item.links}`);
                     }
+                } else {
+                    console.log('No links found in this item');
                 }
             }
 
@@ -61,10 +79,13 @@ module.exports = {
             if (results.length > 0) {
                 const foundLinks = results.map(link => `- ${link}`).join('\n');
                 response = `Found the username **"${username}"** on the following sites:\n${foundLinks}\nTime taken: ${(Date.now() - startTime) / 1000}s`;
+                console.log('Results found:', foundLinks);
             } else {
                 response = `No valid results found for username **"${username}"**.\n\nTime taken: ${(Date.now() - startTime) / 1000}s`;
+                console.log('No results found.');
             }
 
+            console.log('Final response:', response);
             await interaction.editReply(response);
 
         } catch (error) {
@@ -75,10 +96,11 @@ module.exports = {
     },
 };
 
-// Helper function to check if the link is valid
 async function checkLink(link) {
+    console.log(`Checking link validity: ${link}`);
     try {
         const response = await fetch(link, { method: 'HEAD' });
+        console.log(`Link ${link} responded with status: ${response.status}`);
         if (response.status === 404) {
             console.log(`Link ${link} returned a 404 error.`);
             return false;
