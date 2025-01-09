@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { ApifyClient } = require('apify-client');
 const { fetch } = require('undici');
 
@@ -71,18 +71,29 @@ module.exports = {
                 }
             }
 
-            let response;
+            let responseEmbed;
             if (results.length > 0) {
                 const foundLinks = results.map(link => `- ${link}`).join('\n');
-                response = `Found the username **"${username}"** on the following sites:\n${foundLinks}\nTime taken: ${(Date.now() - startTime) / 1000}s`;
+                responseEmbed = new EmbedBuilder()
+                    .setColor('#cb668b')
+                    .setTitle(`Username Found: **${username}**`)
+                    .setDescription(`Found the username **"${username}"** on the following sites:`)
+                    .addFields(
+                        { name: 'Links', value: foundLinks || 'No links found.' }
+                    )
+                    .setFooter({ text: `Time taken: ${(Date.now() - startTime) / 1000}s` });
                 console.log('Results found:', foundLinks);
             } else {
-                response = `No valid results found for username **"${username}"**.\n\nTime taken: ${(Date.now() - startTime) / 1000}s`;
+                responseEmbed = new EmbedBuilder()
+                    .setColor('#ff0000')
+                    .setTitle(`No Results Found: **${username}**`)
+                    .setDescription(`No valid results found for username **"${username}"**.`)
+                    .setFooter({ text: `Time taken: ${(Date.now() - startTime) / 1000}s` });
                 console.log('No results found.');
             }
 
-            console.log('Final response:', response);
-            await interaction.editReply(response);
+            console.log('Final response embed:', responseEmbed);
+            await interaction.editReply({ embeds: [responseEmbed] });
 
         } catch (error) {
             console.error('Error executing /stalk command:', error);
