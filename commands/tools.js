@@ -187,11 +187,16 @@ module.exports = {
                 }
 
                 console.log(`[INFO] Fetching media from URL...`);
-                const response = await axios.get(url, { responseType: 'stream' });
+                const response = await axios.get(url, { responseType: 'stream', maxRedirects: 5 });
 
                 if (response.status !== 200) {
                     console.error(`[ERROR] Failed to fetch media. HTTP Status: ${response.status}`);
                     throw new Error(`Failed to fetch media. Status: ${response.status}`);
+                }
+
+                const contentType = response.headers['content-type'];
+                if (!contentType.startsWith('image/')) {
+                    throw new Error('The URL does not point to an image file.');
                 }
 
                 const filePath = path.join(downloadsDir, fileName);
