@@ -234,14 +234,12 @@ module.exports = {
                     }
         
                     const embed = new EmbedBuilder()
-                        .setColor('#0099ff')
-                        .setTitle('Here is your downloaded media:')
+                        .setColor('#cb668b')
                         .setImage('attachment://' + fileName);
         
                     console.log(`[DEBUG] Embed being created with image attachment: attachment://${fileName}`);
         
                     await interaction.editReply({
-                        content: 'Here is your downloaded media:',
                         embeds: [embed],
                         files: [{
                             attachment: filePath,
