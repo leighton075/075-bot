@@ -35,7 +35,19 @@ for (const file of commandFiles) {
 client.on('ready', () => {
     console.log(`${client.user.tag} has logged in.`);
     console.log(`Loaded ${commandFiles.length} commands locally.`);
-    client.user.setActivity('Good Kid', {type: 2});
+    // client.user.setActivity('Good Kid', {type: 2});
+    client.user.setPresence({
+        activities: [
+            {
+                name: 'Good Kid',
+                type: 2,
+                assets: {
+                    large_image: 'goodkid'
+                    large_text: 'Good Kid'
+                }
+            }
+        ]
+    });
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
