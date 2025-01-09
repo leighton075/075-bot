@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, Faces, CommandInteractionOptionResolver } = require('discord.js');
 const puppeteer = require('puppeteer');
 const fetch = require('node-fetch');
 const fs = require('fs');
@@ -19,6 +19,14 @@ module.exports = {
                     option.setName('url')
                         .setDescription('Url of a website to screenshot')
                         .setRequired(true)))
+                .addIntegerOption(option =>
+                    option.setName('width')
+                        .setDescription('Width of the image (max 1920)')
+                        .setRequired(false))
+                .addIntegerOption(option =>
+                    option.setName('height')
+                        .setDescription('Height of image (max 3840)')
+                        .setRequired(false))
         .addSubcommand(subcommand =>
             subcommand
                 .setName('download')
@@ -37,6 +45,21 @@ module.exports = {
 
         if (subcommand === 'screenshot') {
             let url = interaction.options.getString('url');
+            const width = interaction.options.getInteger('width');
+            const height = interaction.options.getInteger('height');
+
+            if (height && (height <= 0 || height > 3840)) {
+                return interaction.reply('Please enter a valid height (max 3840)');
+            } else if (!height) {
+                height = 1080;
+            }
+            
+            if (width && (width <= 0 || width > 1920)) {
+                return interaction.reply('Please enter a valid width (max 1920)');
+            } else if (!width) {
+                width = 1920;
+            }
+
             await interaction.deferReply();
             console.log(`[INFO] Screenshot URL: ${url}`);
             
@@ -67,17 +90,14 @@ module.exports = {
                 await browser.close();
                 console.log(`[INFO] Browser instance closed`);
         
-                // Check the integrity of the screenshot buffer before proceeding
                 if (!screenshotBuffer || screenshotBuffer.length === 0) {
                     throw new Error('Screenshot buffer is empty or invalid.');
                 }
         
                 console.log(`Screenshot buffer size: ${Buffer.byteLength(screenshotBuffer)} bytes`);
-        
-                // Resize screenshot directly without saving to a file
                 const resizeStartTime = Date.now();
                 const resizedScreenshotBuffer = await sharp(screenshotBuffer)
-                    .resize(1920, 1080)
+                    .resize(width, height)
                     .toBuffer();
                 const resizeEndTime = Date.now();
                 console.log(`[INFO] Screenshot resized in ${(resizeEndTime - resizeStartTime) / 1000}s`);
@@ -91,7 +111,7 @@ module.exports = {
                     .setColor('#cb668b')
                     .setTitle(url)
                     .setImage('attachment://screenshot.png')
-                    .setFooter({ text: `1920x1080, ${imgSize}kb, took ${executionTime} seconds` });
+                    .setFooter({ text: `${width}x${height}, ${imgSize}kb, took ${executionTime} seconds` });
         
                 await interaction.editReply({
                     embeds: [embed],
