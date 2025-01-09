@@ -1,6 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js');
 const { ApifyClient } = require('apify-client');
-const fetch = require('node-fetch');
+const { fetch } = require('undici');
 
 const client = new ApifyClient({ token: process.env.APIFY_API_KEY });
 
@@ -101,11 +101,20 @@ async function checkLink(link) {
     try {
         const response = await fetch(link, { method: 'HEAD' });
         console.log(`Link ${link} responded with status: ${response.status}`);
+        
+        // Check if the status is 404 or any other specific code you want to handle
         if (response.status === 404) {
             console.log(`Link ${link} returned a 404 error.`);
             return false;
         }
-        return true;
+
+        // Optionally handle other status codes like 301, 302 (redirects)
+        if (response.status === 301 || response.status === 302) {
+            console.log(`Link ${link} is redirected.`);
+            return true;
+        }
+
+        return true; // Valid link (non-404)
     } catch (error) {
         console.error(`Error checking link ${link}:`, error);
         return false;
