@@ -172,7 +172,12 @@ module.exports = {
         
             try {
                 const mediaUrl = new URL(url);
-                const fileName = path.basename(mediaUrl.pathname);
+                let fileName = path.basename(mediaUrl.pathname);
+        
+                if (!fileName || fileName === 'iu') {
+                    fileName = 'downloaded-image.png';
+                    console.log(`[INFO] Invalid filename, setting to fallback: ${fileName}`);
+                }
                 console.log(`[DEBUG] Media URL parsed successfully. Filename: ${fileName}`);
         
                 const downloadsDir = path.join(__dirname, 'downloads');
@@ -211,12 +216,15 @@ module.exports = {
                         console.log(`[DEBUG] File exists at ${filePath}`);
                     } else {
                         console.error(`[ERROR] File does not exist after download!`);
+                        await interaction.editReply({
+                            content: 'An error occurred. The downloaded file is missing. Please try again.',
+                        });
+                        return;
                     }
         
                     const fileStats = fs.statSync(filePath);
                     console.log(`[DEBUG] File stats: ${JSON.stringify(fileStats)}`);
         
-                    // Check if file size is 0 or image is invalid
                     if (fileStats.size === 0) {
                         console.error(`[ERROR] Downloaded file is empty.`);
                         await interaction.editReply({
@@ -265,7 +273,7 @@ module.exports = {
                     content: 'An error occurred while downloading the media. Please check the URL and try again.',
                 });
             }
-        }        
+        }              
 
         const endTime = Date.now();
         console.log(`[INFO] Command execution completed in ${(endTime - startTime) / 1000}s`);
