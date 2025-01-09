@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, Faces, CommandInteractionOptionResolver } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const puppeteer = require('puppeteer');
 const fetch = require('node-fetch');
 const fs = require('fs');
@@ -50,13 +50,15 @@ module.exports = {
 
             if (height && (height <= 0 || height > 3840)) {
                 return interaction.reply('Please enter a valid height (max 3840)');
-            } else if (!height) {
+            }
+            if (!height) {
                 height = 1080;
             }
             
             if (width && (width <= 0 || width > 1920)) {
                 return interaction.reply('Please enter a valid width (max 1920)');
-            } else if (!width) {
+            }
+            if (!width) {
                 width = 1920;
             }
 
