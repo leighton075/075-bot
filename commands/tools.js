@@ -166,9 +166,11 @@ module.exports = {
         if (subcommand === 'download') {
             const url = interaction.options.getString('url');
             console.log(`[DEBUG] Download URL: ${url}`);
-            
+        
             await interaction.reply({ content: 'Downloading media... Please wait.' });
             console.log(`[INFO] User notified about the download process`);
+        
+            const downloadStartTime = Date.now();
         
             try {
                 const mediaUrl = new URL(url);
@@ -233,29 +235,45 @@ module.exports = {
                         return;
                     }
         
-                    const embed = new EmbedBuilder()
-                        .setColor('#cb668b')
-                        .setImage('attachment://' + fileName);
+                    try {
+                        const metadata = await sharp(filePath).metadata();
+                        const width = metadata.width;
+                        const height = metadata.height;
+                        const imgSize = (fileStats.size / 1024).toFixed(2);
+                        const downloadEndTime = Date.now();
+                        const executionTime = ((downloadEndTime - downloadStartTime) / 1000).toFixed(2);
         
-                    console.log(`[DEBUG] Embed being created with image attachment: attachment://${fileName}`);
+                        const embed = new EmbedBuilder()
+                            .setColor('#cb668b')
+                            .setImage('attachment://' + fileName)
+                            .setFooter({ text: `Dimensions: ${width}x${height}, Size: ${imgSize}KB, Took: ${executionTime} seconds` });
         
-                    await interaction.editReply({
-                        embeds: [embed],
-                        files: [{
-                            attachment: filePath,
-                            name: fileName
-                        }],
-                    });
+                        console.log(`[DEBUG] Embed being created with image attachment: attachment://${fileName}`);
         
-                    console.log(`[INFO] File sent to the user: ${fileName}`);
+                        await interaction.editReply({
+                            embeds: [embed],
+                            files: [{
+                                attachment: filePath,
+                                name: fileName
+                            }],
+                        });
         
-                    fs.unlink(filePath, (err) => {
-                        if (err) {
-                            console.error(`[ERROR] Error deleting the file: ${err.message}`);
-                        } else {
-                            console.log(`[INFO] File deleted successfully: ${filePath}`);
-                        }
-                    });
+                        console.log(`[INFO] File sent to the user: ${fileName}`);
+        
+                        fs.unlink(filePath, (err) => {
+                            if (err) {
+                                console.error(`[ERROR] Error deleting the file: ${err.message}`);
+                            } else {
+                                console.log(`[INFO] File deleted successfully: ${filePath}`);
+                            }
+                        });
+        
+                    } catch (err) {
+                        console.error(`[ERROR] Error getting image dimensions: ${err.message}`);
+                        await interaction.editReply({
+                            content: 'An error occurred while processing the image dimensions. Please try again.',
+                        });
+                    }
                 });
         
                 fileStream.on('error', (err) => {
@@ -271,8 +289,8 @@ module.exports = {
                     content: 'An error occurred while downloading the media. Please check the URL and try again.',
                 });
             }
-        }              
-
+        }
+                     
         const endTime = Date.now();
         console.log(`[INFO] Command execution completed in ${(endTime - startTime) / 1000}s`);
     },
