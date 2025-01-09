@@ -37,6 +37,11 @@ module.exports = {
                         .setRequired(true))),
         
     async execute(interaction) {
+        fetch('https://jsonplaceholder.typicode.com/posts')
+        .then(response => response.json())
+        .then(data => console.log(data))
+        .catch(error => console.error('Error:', error));
+
         const startTime = Date.now();
         console.log(`[INFO] Command execution started at ${new Date(startTime).toISOString()}`);
         
