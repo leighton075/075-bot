@@ -180,7 +180,6 @@ module.exports = {
                 const fileName = path.basename(mediaUrl.pathname);
                 console.log(`[DEBUG] Media URL parsed successfully. Filename: ${fileName}`);
 
-                // Ensure the downloads directory exists
                 const downloadsDir = path.join(__dirname, 'downloads');
                 if (!fs.existsSync(downloadsDir)) {
                     fs.mkdirSync(downloadsDir, { recursive: true });
@@ -213,6 +212,9 @@ module.exports = {
                     } else {
                         console.error(`[ERROR] File does not exist after download!`);
                     }
+
+                    const fileStats = fs.statSync(filePath);
+                    console.log(`[DEBUG] File stats: ${JSON.stringify(fileStats)}`);
 
                     const embed = new EmbedBuilder()
                         .setColor('#0099ff')
