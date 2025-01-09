@@ -180,7 +180,6 @@ module.exports = {
                 const fileName = path.basename(mediaUrl.pathname);
                 console.log(`[INFO] Media URL parsed successfully. Filename: ${fileName}`);
 
-                // Ensure the downloads directory exists
                 const downloadsDir = path.join(__dirname, 'downloads');
                 if (!fs.existsSync(downloadsDir)) {
                     fs.mkdirSync(downloadsDir, { recursive: true });
@@ -198,7 +197,6 @@ module.exports = {
                 const filePath = path.join(downloadsDir, fileName);
                 console.log(`[INFO] Saving media to local file: ${filePath}`);
 
-                // Ensure data is a stream
                 if (!response.data || typeof response.data.pipe !== 'function') {
                     throw new Error('Response data is not a stream');
                 }
@@ -209,8 +207,14 @@ module.exports = {
                 fileStream.on('finish', async () => {
                     console.log(`[INFO] File download completed: ${filePath}`);
 
+                    const embed = new EmbedBuilder()
+                        .setColor('#0099ff')
+                        .setTitle('Here is your downloaded media:')
+                        .setImage('attachment://' + fileName);
+
                     await interaction.editReply({
                         content: 'Here is your downloaded media:',
+                        embeds: [embed],
                         files: [{ attachment: filePath, name: fileName }],
                     });
                     console.log(`[INFO] File sent to the user: ${fileName}`);
