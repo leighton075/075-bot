@@ -36,6 +36,7 @@ module.exports = {
 
         if (subcommand === 'screenshot') {
             const url = interaction.options.getString('url');
+            await interaction.deferReply();
             console.log(`[INFO] Screenshot URL: ${url}`);
 
             try {
