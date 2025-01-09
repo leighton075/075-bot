@@ -6,7 +6,7 @@ const client = new ApifyClient({ token: process.env.APIFY_API_KEY });
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('stalk')
-        .setDescription('find all instances of a username')
+        .setDescription('Find all instances of a username')
         .addStringOption(option =>
             option.setName('username')
                 .setDescription('Username to search for')
@@ -25,7 +25,8 @@ module.exports = {
             const dataset = client.dataset(run.defaultDatasetId);
             const results = [];
 
-            for await (const item of dataset.iterateItems()) {
+            const items = await dataset.getItems();
+            for (const item of items) {
                 if (item.links && item.links.length > 0) {
                     results.push(...item.links);
                 }
