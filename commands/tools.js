@@ -45,8 +45,8 @@ module.exports = {
 
         if (subcommand === 'screenshot') {
             let url = interaction.options.getString('url');
-            const width = interaction.options.getInteger('width');
-            const height = interaction.options.getInteger('height');
+            let width = interaction.options.getInteger('width');
+            let height = interaction.options.getInteger('height');
 
             if (height && (height <= 0 || height > 3840)) {
                 return interaction.reply('Please enter a valid height (max 3840)');
