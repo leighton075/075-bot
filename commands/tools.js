@@ -1,10 +1,11 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const puppeteer = require('puppeteer');
 const fetch = require('node-fetch');
 const fs = require('fs');
 const path = require('path');
 const { createWriteStream } = require('fs');
 const { URL } = require('url');
+const sharp = require('sharp');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -45,7 +46,10 @@ module.exports = {
             }
         
             let screenshotBuffer;
+            let executionTime;
+
             try {
+                const captureStartTime = Date.now();
                 console.log(`[INFO] Launching Puppeteer browser instance...`);
                 const browser = await puppeteer.launch({
                     executablePath: '/usr/bin/chromium-browser',
@@ -66,27 +70,53 @@ module.exports = {
                 if (!Buffer.isBuffer(screenshotBuffer)) {
                     throw new Error('Screenshot buffer is invalid.');
                 }
-        
-                // Send screenshot
+
+                const resizedScreenshotBuffer = await sharp(screenshotBuffer)
+                    .resize(1920, 1080)
+                    .toBuffer();
+
+                const captureEndTime = Date.now();
+                executionTime = ((captureEndTime - captureStartTime) / 1000).toFixed(2);
+    
+                const imgSize = (Buffer.byteLength(resizedScreenshotBuffer) / 1024).toFixed(2);
+
+                const embed = new EmbedBuilder()
+                    .setColor('#cb668b')
+                    .setTitle(url)
+                    .setImage('attachment://screenshot.png')
+                    .setFooter(`1920x1080, ${imgSize}kb, took ${executionTime} seconds`)
+
                 await interaction.editReply({
                     content: 'Here is the screenshot:',
-                    files: [{ attachment: screenshotBuffer, name: 'screenshot.png' }],
+                    embeds: [embed],
+                    files: [{ attachment: resizedScreenshotBuffer, name: 'screenshot.png' }],
                 });
                 console.log(`[INFO] Screenshot sent to the user`);
         
             } catch (error) {
                 console.error(`[ERROR] Error capturing screenshot: ${error.message}`);
-        
-                // Fallback: Ensure screenshotBuffer is defined before attempting to write a file
+
                 if (screenshotBuffer) {
                     try {
                         const tempFilePath = path.join(__dirname, 'temp_screenshot.png');
                         fs.writeFileSync(tempFilePath, screenshotBuffer);
+
+                        const resizedScreenshotBuffer = await sharp(tempFilePath)
+                            .resize(1920, 1080)
+                            .toBuffer();
+
+                        const embed = new EmbedBuilder()
+                            .setColor('#0099ff')
+                            .setTitle('Screenshot Error')
+                            .setDescription('An error occurred, but we were able to capture a screenshot.')
+                            .setImage('attachment://screenshot.png');
+
                         await interaction.editReply({
                             content: 'Here is the screenshot:',
-                            files: [{ attachment: tempFilePath, name: 'screenshot.png' }],
+                            embeds: [embed],
+                            files: [{ attachment: resizedScreenshotBuffer, name: 'screenshot.png' }],
                         });
-                        fs.unlinkSync(tempFilePath); // Clean up temp file
+                        fs.unlinkSync(tempFilePath);
                     } catch (fallbackError) {
                         console.error(`[ERROR] Fallback file handling failed: ${fallbackError.message}`);
                         await interaction.editReply({
@@ -99,7 +129,7 @@ module.exports = {
                     });
                 }
             }
-        }         
+        }        
 
         if (subcommand === 'download') {
             const url = interaction.options.getString('url');
