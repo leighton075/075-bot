@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const puppeteer = require('puppeteer');
-const fetch = require('node-fetch');
+const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 const { createWriteStream } = require('fs');
@@ -136,7 +136,6 @@ module.exports = {
                 console.error(`[ERROR] Error capturing screenshot: ${error.message}`);
                 if (screenshotBuffer) {
                     try {
-                        // Process fallback with buffer directly
                         const fallbackStartTime = Date.now();
                         const resizedScreenshotBuffer = await sharp(screenshotBuffer)
                             .resize(1920, 1080)
@@ -182,9 +181,9 @@ module.exports = {
                 console.log(`[INFO] Media URL parsed successfully. Filename: ${fileName}`);
 
                 console.log(`[INFO] Fetching media from URL...`);
-                const response = await fetch(url);
+                const response = await axios.get(url, { responseType: 'stream' });
 
-                if (!response.ok) {
+                if (response.status !== 200) {
                     console.error(`[ERROR] Failed to fetch media. HTTP Status: ${response.status}`);
                     throw new Error(`Failed to fetch media. Status: ${response.status}`);
                 }
