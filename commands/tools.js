@@ -329,31 +329,33 @@ module.exports = {
         
         if (subcommand === 'extract') {
             const url = interaction.options.getString('url');
-        const fileName = path.basename(url); // Get the filename from the URL
-        const filePath = path.join(__dirname, 'downloads', fileName); // Video download path
-        const audioFilePath = path.join(__dirname, 'downloads', 'audio.mp3'); // Audio file output path
+            const fileName = path.basename(url);
+            const filePath = path.join(__dirname, 'downloads', fileName);
+            const audioFilePath = path.join(__dirname, 'downloads', 'audio.mp3');
 
-        try {
-            await interaction.reply({ content: 'Downloading video... Please wait.' });
+            try {
+                await interaction.reply({ content: 'Downloading video... Please wait.' });
 
-            const response = await axios.get(url, { responseType: 'stream' });
-            const videoStream = response.data;
-            const videoWriteStream = createWriteStream(filePath);
+                const response = await axios.get(url, { responseType: 'stream' });
+                const videoStream = response.data;
+                const videoWriteStream = createWriteStream(filePath);
 
-            videoStream.pipe(videoWriteStream);
+                videoStream.pipe(videoWriteStream);
 
-            videoWriteStream.on('finish', async () => {
-                console.log('[INFO] Video downloaded successfully');
+                videoWriteStream.on('finish', async () => {
+                    console.log('[INFO] Video downloaded successfully');
 
-                ffmpeg(filePath)
+                    ffmpeg(filePath)
                     .output(audioFilePath)
                     .audioCodec('libmp3lame')
                     .on('end', async () => {
                         console.log('[INFO] Audio extraction complete');
 
+                        // Get the audio file size
                         const audioFileStats = statSync(audioFilePath);
-                        const audioSizeInKB = (audioFileStats.size / 1024).toFixed(2);
+                        const audioSizeInKB = (audioFileStats.size / 1024).toFixed(2); // Size in KB
 
+                        // Get the audio duration
                         ffmpeg.ffprobe(audioFilePath, (err, metadata) => {
                             if (err) {
                                 console.error('[ERROR] Error fetching audio metadata:', err);
@@ -365,6 +367,7 @@ module.exports = {
                             const seconds = Math.floor(duration % 60);
                             const formattedDuration = `${minutes}m ${seconds}s`;
 
+                            // Send the audio file to the user
                             interaction.editReply({
                                 content: 'Audio extraction complete!',
                                 files: [{
@@ -373,6 +376,7 @@ module.exports = {
                                 }],
                             });
 
+                            // Create an embed with the audio details
                             const embed = new EmbedBuilder()
                                 .setColor('#ff0000')
                                 .setTitle('Audio Extracted Successfully')
@@ -382,7 +386,7 @@ module.exports = {
                                 )
                                 .setFooter({ text: 'Audio extracted using FFmpeg' });
 
-                            await interaction.followUp({
+                            interaction.followUp({
                                 embeds: [embed],
                             });
 
@@ -397,11 +401,11 @@ module.exports = {
                     })
                     .run();
             });
-        } catch (error) {
-            console.error('[ERROR] Error downloading the video:', error);
-            await interaction.reply({ content: 'There was an error downloading the video. Check the URL and try again.' });
-        }
-
+            } catch (error) {
+                console.error('[ERROR] Error downloading the video:', error);
+                await interaction.reply({ content: 'There was an error downloading the video. Check URL and try again.' });
+            }
+        }         
         const endTime = Date.now();
         console.log(`[INFO] Command execution completed in ${(endTime - startTime) / 1000}s`);
     },
