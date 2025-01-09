@@ -180,6 +180,7 @@ module.exports = {
                 const fileName = path.basename(mediaUrl.pathname);
                 console.log(`[DEBUG] Media URL parsed successfully. Filename: ${fileName}`);
 
+                // Ensure the downloads directory exists
                 const downloadsDir = path.join(__dirname, 'downloads');
                 if (!fs.existsSync(downloadsDir)) {
                     fs.mkdirSync(downloadsDir, { recursive: true });
@@ -223,8 +224,12 @@ module.exports = {
                     await interaction.editReply({
                         content: 'Here is your downloaded media:',
                         embeds: [embed],
-                        files: [{ attachment: filePath, name: fileName }],
+                        files: [{
+                            attachment: filePath,
+                            name: fileName
+                        }],
                     });
+
                     console.log(`[INFO] File sent to the user: ${fileName}`);
 
                     fs.unlink(filePath, (err) => {
