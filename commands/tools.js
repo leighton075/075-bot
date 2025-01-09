@@ -177,7 +177,7 @@ module.exports = {
                 let fileName = path.basename(mediaUrl.pathname);
         
                 if (!fileName || fileName === 'iu') {
-                    fileName = 'downloaded-image.png';
+                    fileName = 'downloaded-media';
                     console.log(`[INFO] Invalid filename, setting to fallback: ${fileName}`);
                 }
                 console.log(`[DEBUG] Media URL parsed successfully. Filename: ${fileName}`);
@@ -197,8 +197,11 @@ module.exports = {
                 }
         
                 const contentType = response.headers['content-type'];
-                if (!contentType.startsWith('image/')) {
-                    throw new Error('The URL does not point to an image file.');
+                const isImage = contentType.startsWith('image/');
+                const isVideo = contentType.startsWith('video/');
+        
+                if (!isImage && !isVideo) {
+                    throw new Error('The URL does not point to an image or video file.');
                 }
         
                 const filePath = path.join(downloadsDir, fileName);
@@ -235,45 +238,48 @@ module.exports = {
                         return;
                     }
         
-                    try {
+                    let fileSizeInKB = (fileStats.size / 1024).toFixed(2);
+                    const downloadEndTime = Date.now();
+                    const executionTime = ((downloadEndTime - downloadStartTime) / 1000).toFixed(2);
+        
+                    const embed = new EmbedBuilder()
+                        .setColor('#cb668b')
+                        .setFooter({ text: `Size: ${fileSizeInKB}KB, Took: ${executionTime} seconds` });
+        
+                    if (isImage) {
                         const metadata = await sharp(filePath).metadata();
                         const width = metadata.width;
                         const height = metadata.height;
-                        const imgSize = (fileStats.size / 1024).toFixed(2);
-                        const downloadEndTime = Date.now();
-                        const executionTime = ((downloadEndTime - downloadStartTime) / 1000).toFixed(2);
         
-                        const embed = new EmbedBuilder()
-                            .setColor('#cb668b')
-                            .setImage('attachment://' + fileName)
-                            .setFooter({ text: `Dimensions: ${width}x${height}, Size: ${imgSize}KB, Took: ${executionTime} seconds` });
+                        embed.setImage('attachment://' + fileName)
+                            .setFooter({
+                                text: `Dimensions: ${width}x${height}, Size: ${fileSizeInKB}KB, Took: ${executionTime} seconds`,
+                            });
         
-                        console.log(`[DEBUG] Embed being created with image attachment: attachment://${fileName}`);
-        
-                        await interaction.editReply({
-                            embeds: [embed],
-                            files: [{
-                                attachment: filePath,
-                                name: fileName
-                            }],
-                        });
-        
-                        console.log(`[INFO] File sent to the user: ${fileName}`);
-        
-                        fs.unlink(filePath, (err) => {
-                            if (err) {
-                                console.error(`[ERROR] Error deleting the file: ${err.message}`);
-                            } else {
-                                console.log(`[INFO] File deleted successfully: ${filePath}`);
-                            }
-                        });
-        
-                    } catch (err) {
-                        console.error(`[ERROR] Error getting image dimensions: ${err.message}`);
-                        await interaction.editReply({
-                            content: 'An error occurred while processing the image dimensions. Please try again.',
-                        });
+                    } else if (isVideo) {
+                        embed.setDescription('Here is your video:')
+                            .setFooter({
+                                text: `Video Size: ${fileSizeInKB}KB, Took: ${executionTime} seconds`,
+                            });
                     }
+        
+                    await interaction.editReply({
+                        embeds: [embed],
+                        files: [{
+                            attachment: filePath,
+                            name: fileName,
+                        }],
+                    });
+        
+                    console.log(`[INFO] File sent to the user: ${fileName}`);
+        
+                    fs.unlink(filePath, (err) => {
+                        if (err) {
+                            console.error(`[ERROR] Error deleting the file: ${err.message}`);
+                        } else {
+                            console.log(`[INFO] File deleted successfully: ${filePath}`);
+                        }
+                    });
                 });
         
                 fileStream.on('error', (err) => {
@@ -289,7 +295,7 @@ module.exports = {
                     content: 'An error occurred while downloading the media. Please check the URL and try again.',
                 });
             }
-        }
+        }        
                      
         const endTime = Date.now();
         console.log(`[INFO] Command execution completed in ${(endTime - startTime) / 1000}s`);
