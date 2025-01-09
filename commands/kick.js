@@ -61,6 +61,7 @@ module.exports = {
                             .setFooter({ text: `Reason for kick: ${reason}`, iconURL: interaction.user.displayAvatarURL() });
 
                         await i.update({embeds: [embed], components: []});
+                        collector.stop();
                     } catch (error) {
                         console.error('Error kicking user:', error);
                         await i.update({ content: `There was an error kicking ${user.tag}`, components: [] });

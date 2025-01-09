@@ -66,35 +66,6 @@ client.on(Events.MessageCreate, async (message) => {
             .then(() => console.log(`Deleted message from ${message.author.tag}`))
             .catch((error) => console.error('Failed to delete message:', error));
     }
-
-    if (message.content.includes('test')) {
-        console.log('Test command received');
-        try {
-            const fetchedLogs = await message.guild.fetchAuditLogs({
-                type: AuditLogEvent.InviteCreate,
-                limit: 1,
-            });
-
-            if (fetchedLogs.entries.size > 0) {
-                const firstEntry = fetchedLogs.entries.first();
-
-                const logDetails = `
-                    Action: ${firstEntry.action}
-                    Executor: ${firstEntry.executor.tag}
-                    Target: ${firstEntry.target.tag || 'N/A'}
-                    Reason: ${firstEntry.reason || 'No reason provided'}
-                    Timestamp: ${firstEntry.createdAt.toISOString()}
-                `;
-
-                message.reply({ content: `Audit log entry:\n${logDetails}`, ephemeral: true });
-            } else {
-                message.reply({ content: 'No audit log entries found.', ephemeral: true });
-            }
-        } catch (error) {
-            console.error('Error fetching audit logs:', error);
-            message.reply({ content: 'There was an error fetching the audit logs.', ephemeral: true });
-        }
-    }
 });
 
 client.on(Events.GuildMemberAdd, async (member) => {

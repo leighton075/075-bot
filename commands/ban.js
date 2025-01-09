@@ -61,6 +61,7 @@ module.exports = {
                             .setFooter({ text: `Reason for ban: ${reason}`, iconURL: interaction.user.displayAvatarURL() });
 
                         await i.update({embeds: [embed], components: []});
+                        collector.stop();
                     } catch (error) {
                         console.error('Error banning user:', error);
                         await i.update({ content: `There was an error banning ${user.tag}`, components: [] });
