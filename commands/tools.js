@@ -18,15 +18,15 @@ module.exports = {
                 .addStringOption(option =>
                     option.setName('url')
                         .setDescription('Url of a website to screenshot')
-                        .setRequired(true)))
+                        .setRequired(true))
                 .addIntegerOption(option =>
                     option.setName('width')
                         .setDescription('Width of the image (max 1920)')
                         .setRequired(false))
                 .addIntegerOption(option =>
                     option.setName('height')
-                        .setDescription('Height of image (max 3840)')
-                        .setRequired(false))
+                        .setDescription('Height of the image (max 3840)')
+                        .setRequired(false)))
         .addSubcommand(subcommand =>
             subcommand
                 .setName('download')
