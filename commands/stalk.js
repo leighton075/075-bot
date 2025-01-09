@@ -19,7 +19,7 @@ module.exports = {
         .addSubcommand(subcommand =>
             subcommand
                 .setName('advanced')
-                .setDescription('Search and filter out 404/403 links (takes about twice as long)')
+                .setDescription('Search and filter out 404/403 links (takes 10-30 seconds longer)')
                 .addStringOption(option =>
                     option.setName('username')
                         .setDescription('Username to search for')
@@ -40,17 +40,13 @@ module.exports = {
             const runInput = { "usernames": [username] };
             console.log('Running actor with input:', runInput);
             const run = await client.actor('netmilk/sherlock').call(runInput);
-            console.log('Actor run completed, run data:', run);
 
             const dataset = client.dataset(run.defaultDatasetId);
-            console.log(`Dataset ID: ${run.defaultDatasetId}`);
 
             const { items } = await dataset.listItems();
             console.log(`Fetched ${items.length} items from dataset`);
 
             for (const item of items) {
-                console.log(`Processing item: ${JSON.stringify(item)}`);
-
                 if (item.links && item.links.length > 0) {
                     console.log(`Found ${item.links.length} links in this item`);
 
