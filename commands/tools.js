@@ -180,6 +180,12 @@ module.exports = {
                 const fileName = path.basename(mediaUrl.pathname);
                 console.log(`[INFO] Media URL parsed successfully. Filename: ${fileName}`);
 
+                const downloadsDir = path.join(__dirname, 'downloads');
+                if (!fs.existsSync(downloadsDir)) {
+                    fs.mkdirSync(downloadsDir, { recursive: true });
+                    console.log(`[INFO] Created 'downloads' directory.`);
+                }
+
                 console.log(`[INFO] Fetching media from URL...`);
                 const response = await axios.get(url, { responseType: 'stream' });
 
