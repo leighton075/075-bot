@@ -25,7 +25,8 @@ module.exports = {
             const dataset = client.dataset(run.defaultDatasetId);
             const results = [];
 
-            const items = await dataset.getItems();
+            // Fetch items from the dataset
+            const { items } = await dataset.listItems();
             for (const item of items) {
                 if (item.links && item.links.length > 0) {
                     results.push(...item.links);
