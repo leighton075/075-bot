@@ -39,7 +39,6 @@ module.exports = {
             await interaction.deferReply();
             console.log(`[INFO] Screenshot URL: ${url}`);
         
-            // Ensure the URL has a valid scheme
             if (!url.startsWith('http://') && !url.startsWith('https://')) {
                 url = `https://${url}`;
                 console.log(`[INFO] URL normalized to: ${url}`);
@@ -54,22 +53,22 @@ module.exports = {
                 });
                 const page = await browser.newPage();
                 console.log(`[INFO] Navigating to URL: ${url}`);
-        
+            
                 await page.goto(url, { waitUntil: 'networkidle2' });
                 console.log(`[INFO] Page loaded. Taking screenshot...`);
-        
+            
                 const screenshot = await page.screenshot();
                 console.log(`[INFO] Screenshot captured successfully`);
-        
+            
                 await browser.close();
                 console.log(`[INFO] Browser instance closed`);
-        
+            
                 await interaction.editReply({
                     content: 'Here is the screenshot:',
                     files: [{ attachment: screenshot, name: 'screenshot.png' }],
                 });
                 console.log(`[INFO] Screenshot sent to the user`);
-        
+            
             } catch (error) {
                 console.error(`[ERROR] Error capturing screenshot: ${error.message}`);
                 await interaction.editReply({
