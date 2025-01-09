@@ -13,10 +13,17 @@ module.exports = {
             option
                 .setName('reason')
                 .setDescription('Reason for kick')
-                .setRequired(false))
-        .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers),
+                .setRequired(false)),
 
     async execute(interaction) {
+        if (!interaction.member.permissions.has(PermissionFlagsBits.KickMembers)) {
+            return interaction.reply({ content: "You don't have the permission to kick members." });
+        }
+
+        if (!interaction.guild.me.permissions.has(PermissionFlagsBits.KickMembers)) {
+            return interaction.reply({ content: "I don't have permission to kick members." });
+        }
+
         const user = interaction.options.getUser('user');
         const reason = interaction.options.getString('reason') || 'No reason provided';
 

@@ -7,7 +7,6 @@ const { createWriteStream } = require('fs');
 const { URL } = require('url');
 const sharp = require('sharp');
 const ffmpeg = require('fluent-ffmpeg');
-const { stream } = require('winston');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -50,18 +49,14 @@ module.exports = {
             let width = interaction.options.getInteger('width');
             let height = interaction.options.getInteger('height');
 
+            height && height > 0 && height <= 3840 ? height : 3840;
             if (height && (height <= 0 || height > 3840)) {
                 return interaction.reply('Please enter a valid height (max 3840)');
             }
-            if (!height) {
-                height = 1080;
-            }
-            
+
+            width && width > 0 && width <= 1920 ? width : 1920;
             if (width && (width <= 0 || width > 1920)) {
                 return interaction.reply('Please enter a valid width (max 1920)');
-            }
-            if (!width) {
-                width = 1920;
             }
 
             await interaction.deferReply();
