@@ -35,6 +35,7 @@ for (const file of commandFiles) {
 client.on('ready', () => {
     console.log(`${client.user.tag} has logged in.`);
     console.log(`Loaded ${commandFiles.length} commands locally.`);
+    client.user.setActivity('Listening to Good Kid', { type: 'LISTENING'});
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {

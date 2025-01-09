@@ -337,7 +337,6 @@ module.exports = {
             try {
                 await interaction.reply({ content: 'Downloading video... Please wait.' });
         
-                // Ensure the 'downloads' directory exists
                 if (!fs.existsSync(downloadDir)) {
                     fs.mkdirSync(downloadDir, { recursive: true });
                     console.log('[INFO] Created "downloads" directory.');
@@ -352,14 +351,12 @@ module.exports = {
                 videoWriteStream.on('finish', async () => {
                     console.log('[INFO] Video downloaded successfully');
         
-                    // Now extract audio using ffmpeg
                 ffmpeg(filePath)
                     .output(audioFilePath)
                     .audioCodec('libmp3lame')
                     .on('end', async () => {
                         console.log('[INFO] Audio extraction complete');
 
-                        // Check if the audio file exists after extraction
                         fs.access(audioFilePath, fs.constants.F_OK, async (err) => {
                             if (err) {
                                 console.error(`[ERROR] Audio file does not exist at path: ${audioFilePath}`);
@@ -368,11 +365,9 @@ module.exports = {
 
                             console.log(`[INFO] Audio file found at: ${audioFilePath}`);
 
-                            // Fetch audio file stats
                             const audioFileStats = fs.statSync(audioFilePath);
-                            const audioSizeInKB = (audioFileStats.size / 1024).toFixed(2); // Size in KB
+                            const audioSizeInKB = (audioFileStats.size / 1024).toFixed(2);
 
-                            // Get the duration of the audio
                             ffmpeg.ffprobe(audioFilePath, (err, metadata) => {
                                 if (err) {
                                     console.error('[ERROR] Error fetching audio metadata:', err);
@@ -401,7 +396,7 @@ module.exports = {
                                     )
                                     .setFooter({ text: 'Audio extracted using FFmpeg' });
 
-                                interaction.reply({
+                                interaction.followUp({
                                     embeds: [embed],
                                 });
                                 setTimeout(() => {
