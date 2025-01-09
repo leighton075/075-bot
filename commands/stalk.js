@@ -19,7 +19,7 @@ module.exports = {
         .addSubcommand(subcommand =>
             subcommand
                 .setName('advanced')
-                .setDescription('Search and filter out 404 links')
+                .setDescription('Search and filter out 404/403 links (takes about twice as long)')
                 .addStringOption(option =>
                     option.setName('username')
                         .setDescription('Username to search for')
@@ -55,7 +55,7 @@ module.exports = {
                     console.log(`Found ${item.links.length} links in this item`);
 
                     if (subcommand === 'advanced') {
-                        console.log(`Filtering 404 links for advanced search`);
+                        console.log(`Filtering 404 and 403 links for advanced search`);
                         for (const link of item.links) {
                             console.log(`Checking link: ${link}`);
                             const isValidLink = await checkLink(link);
@@ -63,7 +63,7 @@ module.exports = {
                                 results.push(link);
                                 console.log(`Valid link found: ${link}`);
                             } else {
-                                console.log(`Invalid link (404): ${link}`);
+                                console.log(`Invalid link (404 or 403): ${link}`);
                             }
                         }
                     } else {
@@ -101,20 +101,18 @@ async function checkLink(link) {
     try {
         const response = await fetch(link, { method: 'HEAD' });
         console.log(`Link ${link} responded with status: ${response.status}`);
-        
-        // Check if the status is 404 or any other specific code you want to handle
-        if (response.status === 404) {
-            console.log(`Link ${link} returned a 404 error.`);
+
+        if (response.status === 404 || response.status === 403) {
+            console.log(`Link ${link} returned a ${response.status} error.`);
             return false;
         }
 
-        // Optionally handle other status codes like 301, 302 (redirects)
         if (response.status === 301 || response.status === 302) {
             console.log(`Link ${link} is redirected.`);
             return true;
         }
 
-        return true; // Valid link (non-404)
+        return true;
     } catch (error) {
         console.error(`Error checking link ${link}:`, error);
         return false;
