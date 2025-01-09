@@ -43,7 +43,7 @@ client.on('ready', () => {
                 type: 2,
                 assets: {
                     large_image: 'goodkid',
-                    large_text: 'Good Kid'
+                    large_text: 'Good Kid',
                 }
             }
         ]
