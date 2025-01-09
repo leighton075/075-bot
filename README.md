@@ -19,6 +19,7 @@ Bot is designed for use on a small private server because I don't like Maki. It'
 
 - Fix inventory value api response error
 - Add ability to stalk by email
+- Add embeds to username stalk and anything else that needs to look pretty
 
 ## Disclaimer
 
