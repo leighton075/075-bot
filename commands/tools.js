@@ -44,6 +44,7 @@ module.exports = {
                 console.log(`[INFO] URL normalized to: ${url}`);
             }
         
+            let screenshotBuffer;
             try {
                 console.log(`[INFO] Launching Puppeteer browser instance...`);
                 const browser = await puppeteer.launch({
@@ -57,7 +58,7 @@ module.exports = {
                 await page.goto(url, { waitUntil: 'networkidle2' });
                 console.log(`[INFO] Page loaded. Taking screenshot...`);
         
-                const screenshotBuffer = await page.screenshot();
+                screenshotBuffer = await page.screenshot();
                 console.log(`[INFO] Screenshot captured successfully`);
                 await browser.close();
                 console.log(`[INFO] Browser instance closed`);
@@ -66,6 +67,7 @@ module.exports = {
                     throw new Error('Screenshot buffer is invalid.');
                 }
         
+                // Send screenshot
                 await interaction.editReply({
                     content: 'Here is the screenshot:',
                     files: [{ attachment: screenshotBuffer, name: 'screenshot.png' }],
@@ -75,22 +77,29 @@ module.exports = {
             } catch (error) {
                 console.error(`[ERROR] Error capturing screenshot: ${error.message}`);
         
-                try {
-                    const tempFilePath = path.join(__dirname, 'temp_screenshot.png');
-                    fs.writeFileSync(tempFilePath, screenshotBuffer);
-                    await interaction.editReply({
-                        content: 'Here is the screenshot:',
-                        files: [{ attachment: tempFilePath, name: 'screenshot.png' }],
-                    });
-                    fs.unlinkSync(tempFilePath);
-                } catch (fallbackError) {
-                    console.error(`[ERROR] Fallback file handling failed: ${fallbackError.message}`);
+                // Fallback: Ensure screenshotBuffer is defined before attempting to write a file
+                if (screenshotBuffer) {
+                    try {
+                        const tempFilePath = path.join(__dirname, 'temp_screenshot.png');
+                        fs.writeFileSync(tempFilePath, screenshotBuffer);
+                        await interaction.editReply({
+                            content: 'Here is the screenshot:',
+                            files: [{ attachment: tempFilePath, name: 'screenshot.png' }],
+                        });
+                        fs.unlinkSync(tempFilePath); // Clean up temp file
+                    } catch (fallbackError) {
+                        console.error(`[ERROR] Fallback file handling failed: ${fallbackError.message}`);
+                        await interaction.editReply({
+                            content: 'An error occurred while taking the screenshot. Please try again later.',
+                        });
+                    }
+                } else {
                     await interaction.editReply({
                         content: 'An error occurred while taking the screenshot. Please try again later.',
                     });
                 }
             }
-        }        
+        }         
 
         if (subcommand === 'download') {
             const url = interaction.options.getString('url');
