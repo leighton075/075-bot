@@ -51,31 +51,46 @@ module.exports = {
                     headless: true,
                     args: ['--no-sandbox', '--disable-setuid-sandbox'],
                 });
+        
                 const page = await browser.newPage();
                 console.log(`[INFO] Navigating to URL: ${url}`);
-            
                 await page.goto(url, { waitUntil: 'networkidle2' });
                 console.log(`[INFO] Page loaded. Taking screenshot...`);
-            
-                const screenshot = await page.screenshot();
+        
+                const screenshotBuffer = await page.screenshot();
                 console.log(`[INFO] Screenshot captured successfully`);
-            
                 await browser.close();
                 console.log(`[INFO] Browser instance closed`);
-            
+        
+                if (!Buffer.isBuffer(screenshotBuffer)) {
+                    throw new Error('Screenshot buffer is invalid.');
+                }
+        
                 await interaction.editReply({
                     content: 'Here is the screenshot:',
-                    files: [{ attachment: screenshot, name: 'screenshot.png' }],
+                    files: [{ attachment: screenshotBuffer, name: 'screenshot.png' }],
                 });
                 console.log(`[INFO] Screenshot sent to the user`);
-            
+        
             } catch (error) {
                 console.error(`[ERROR] Error capturing screenshot: ${error.message}`);
-                await interaction.editReply({
-                    content: 'An error occurred while taking the screenshot. Please try again later.',
-                });
+        
+                try {
+                    const tempFilePath = path.join(__dirname, 'temp_screenshot.png');
+                    fs.writeFileSync(tempFilePath, screenshotBuffer);
+                    await interaction.editReply({
+                        content: 'Here is the screenshot:',
+                        files: [{ attachment: tempFilePath, name: 'screenshot.png' }],
+                    });
+                    fs.unlinkSync(tempFilePath);
+                } catch (fallbackError) {
+                    console.error(`[ERROR] Fallback file handling failed: ${fallbackError.message}`);
+                    await interaction.editReply({
+                        content: 'An error occurred while taking the screenshot. Please try again later.',
+                    });
+                }
             }
-        }
+        }        
 
         if (subcommand === 'download') {
             const url = interaction.options.getString('url');
