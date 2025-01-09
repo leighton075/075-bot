@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const puppeteer = require('puppeteer');
 const fetch = require('node-fetch');
 const fs = require('fs');
@@ -29,73 +29,101 @@ module.exports = {
         
     async execute(interaction) {
         const startTime = Date.now();
+        console.log(`[INFO] Command execution started at ${new Date(startTime).toISOString()}`);
+        
         const subcommand = interaction.options.getSubcommand();
-        console.log(`Subcommand: ${subcommand}`);
+        console.log(`[INFO] Subcommand selected: ${subcommand}`);
 
         if (subcommand === 'screenshot') {
             const url = interaction.options.getString('url');
+            console.log(`[INFO] Screenshot URL: ${url}`);
+
             try {
+                console.log(`[INFO] Launching Puppeteer browser instance...`);
                 const browser = await puppeteer.launch();
                 const page = await browser.newPage();
+                console.log(`[INFO] Navigating to URL: ${url}`);
 
                 await page.goto(url, { waitUntil: 'networkidle2' });
+                console.log(`[INFO] Page loaded. Taking screenshot...`);
 
                 const screenshot = await page.screenshot();
+                console.log(`[INFO] Screenshot captured successfully`);
 
                 await browser.close();
+                console.log(`[INFO] Browser instance closed`);
 
                 await interaction.editReply({
                     content: 'Here is the screenshot:',
                     files: [{ attachment: screenshot, name: 'screenshot.png' }],
                 });
-                console.log(`Screenshot taken for ${url}`);
+                console.log(`[INFO] Screenshot sent to the user`);
 
             } catch (error) {
-                console.error('Error capturing screenshot:', error);
-                await interaction.editReply({ content: 'An error occurred while taking the screenshot. Please try again later.' });
+                console.error(`[ERROR] Error capturing screenshot: ${error.message}`);
+                await interaction.editReply({
+                    content: 'An error occurred while taking the screenshot. Please try again later.',
+                });
             }
         }
 
         if (subcommand === 'download') {
             const url = interaction.options.getString('url');
+            console.log(`[INFO] Download URL: ${url}`);
+            
             await interaction.reply({ content: 'Downloading media... Please wait.' });
+            console.log(`[INFO] User notified about the download process`);
 
             try {
                 const mediaUrl = new URL(url);
                 const fileName = path.basename(mediaUrl.pathname);
+                console.log(`[INFO] Media URL parsed successfully. Filename: ${fileName}`);
 
+                console.log(`[INFO] Fetching media from URL...`);
                 const response = await fetch(url);
 
                 if (!response.ok) {
-                    throw new Error('Failed to fetch media.');
+                    console.error(`[ERROR] Failed to fetch media. HTTP Status: ${response.status}`);
+                    throw new Error(`Failed to fetch media. Status: ${response.status}`);
                 }
 
                 const filePath = path.join(__dirname, 'downloads', fileName);
-                const fileStream = createWriteStream(filePath);
+                console.log(`[INFO] Saving media to local file: ${filePath}`);
 
+                const fileStream = createWriteStream(filePath);
                 response.body.pipe(fileStream);
 
                 fileStream.on('finish', async () => {
-                    console.log(`Downloaded file: ${filePath}`);
+                    console.log(`[INFO] File download completed: ${filePath}`);
 
                     await interaction.editReply({
                         content: 'Here is your downloaded media:',
                         files: [{ attachment: filePath, name: fileName }],
                     });
+                    console.log(`[INFO] File sent to the user: ${fileName}`);
 
                     fs.unlink(filePath, (err) => {
-                        if (err) console.error('Error deleting the file:', err);
+                        if (err) {
+                            console.error(`[ERROR] Error deleting the file: ${err.message}`);
+                        } else {
+                            console.log(`[INFO] File deleted successfully: ${filePath}`);
+                        }
                     });
                 });
 
+                fileStream.on('error', (err) => {
+                    console.error(`[ERROR] File stream error: ${err.message}`);
+                });
+
             } catch (error) {
-                console.error('Error downloading media:', error);
+                console.error(`[ERROR] Error downloading media: ${error.message}`);
                 await interaction.editReply({
                     content: 'An error occurred while downloading the media. Please check the URL and try again.',
                 });
             }
         }
 
-        console.log(`Execution time: ${(Date.now() - startTime) / 1000}s`);
+        const endTime = Date.now();
+        console.log(`[INFO] Command execution completed in ${(endTime - startTime) / 1000}s`);
     },
 };
