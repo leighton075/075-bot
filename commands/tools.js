@@ -174,60 +174,69 @@ module.exports = {
             
             await interaction.reply({ content: 'Downloading media... Please wait.' });
             console.log(`[INFO] User notified about the download process`);
-
+        
             try {
                 const mediaUrl = new URL(url);
                 const fileName = path.basename(mediaUrl.pathname);
                 console.log(`[DEBUG] Media URL parsed successfully. Filename: ${fileName}`);
-
+        
                 const downloadsDir = path.join(__dirname, 'downloads');
                 if (!fs.existsSync(downloadsDir)) {
                     fs.mkdirSync(downloadsDir, { recursive: true });
                     console.log(`[INFO] Created 'downloads' directory.`);
                 }
-
+        
                 console.log(`[INFO] Fetching media from URL...`);
                 const response = await axios.get(url, { responseType: 'stream', maxRedirects: 5 });
-
+        
                 if (response.status !== 200) {
                     console.error(`[ERROR] Failed to fetch media. HTTP Status: ${response.status}`);
                     throw new Error(`Failed to fetch media. Status: ${response.status}`);
                 }
-
+        
                 const contentType = response.headers['content-type'];
                 if (!contentType.startsWith('image/')) {
                     throw new Error('The URL does not point to an image file.');
                 }
-
+        
                 const filePath = path.join(downloadsDir, fileName);
                 console.log(`[DEBUG] Saving media to local file: ${filePath}`);
-
+        
                 if (!response.data || typeof response.data.pipe !== 'function') {
                     throw new Error('Response data is not a stream');
                 }
-
+        
                 const fileStream = createWriteStream(filePath);
                 response.data.pipe(fileStream);
-
+        
                 fileStream.on('finish', async () => {
                     console.log(`[INFO] File download completed: ${filePath}`);
-
+        
                     if (fs.existsSync(filePath)) {
                         console.log(`[DEBUG] File exists at ${filePath}`);
                     } else {
                         console.error(`[ERROR] File does not exist after download!`);
                     }
-
+        
                     const fileStats = fs.statSync(filePath);
                     console.log(`[DEBUG] File stats: ${JSON.stringify(fileStats)}`);
-
+        
+                    // Check if file size is 0 or image is invalid
+                    if (fileStats.size === 0) {
+                        console.error(`[ERROR] Downloaded file is empty.`);
+                        await interaction.editReply({
+                            content: 'The downloaded file is empty. Please check the URL and try again.',
+                        });
+                        return;
+                    }
+        
                     const embed = new EmbedBuilder()
                         .setColor('#0099ff')
                         .setTitle('Here is your downloaded media:')
                         .setImage('attachment://' + fileName);
-
+        
                     console.log(`[DEBUG] Embed being created with image attachment: attachment://${fileName}`);
-
+        
                     await interaction.editReply({
                         content: 'Here is your downloaded media:',
                         embeds: [embed],
@@ -236,9 +245,9 @@ module.exports = {
                             name: fileName
                         }],
                     });
-
+        
                     console.log(`[INFO] File sent to the user: ${fileName}`);
-
+        
                     fs.unlink(filePath, (err) => {
                         if (err) {
                             console.error(`[ERROR] Error deleting the file: ${err.message}`);
@@ -247,18 +256,21 @@ module.exports = {
                         }
                     });
                 });
-
+        
                 fileStream.on('error', (err) => {
                     console.error(`[ERROR] File stream error: ${err.message}`);
+                    interaction.editReply({
+                        content: 'An error occurred while processing the media. Please try again.',
+                    });
                 });
-
+        
             } catch (error) {
                 console.error(`[ERROR] Error downloading media: ${error.message}`);
                 await interaction.editReply({
                     content: 'An error occurred while downloading the media. Please check the URL and try again.',
                 });
             }
-        }
+        }        
 
         const endTime = Date.now();
         console.log(`[INFO] Command execution completed in ${(endTime - startTime) / 1000}s`);
