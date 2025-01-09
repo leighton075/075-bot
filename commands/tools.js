@@ -257,8 +257,7 @@ module.exports = {
                             });
         
                     } else if (isVideo) {
-                        embed.setDescription('Here is your video:')
-                            .setFooter({
+                        embed.setFooter({
                                 text: `Video Size: ${fileSizeInKB}KB, Took: ${executionTime} seconds`,
                             });
                     }
