@@ -39,15 +39,15 @@ module.exports = {
             let url = interaction.options.getString('url');
             await interaction.deferReply();
             console.log(`[INFO] Screenshot URL: ${url}`);
-        
+            
             if (!url.startsWith('http://') && !url.startsWith('https://')) {
                 url = `https://${url}`;
                 console.log(`[INFO] URL normalized to: ${url}`);
             }
-        
+            
             let screenshotBuffer;
             let executionTime;
-
+        
             try {
                 const captureStartTime = Date.now();
                 console.log(`[INFO] Launching Puppeteer browser instance...`);
@@ -56,21 +56,24 @@ module.exports = {
                     headless: true,
                     args: ['--no-sandbox', '--disable-setuid-sandbox'],
                 });
-        
+            
                 const page = await browser.newPage();
                 console.log(`[INFO] Navigating to URL: ${url}`);
                 await page.goto(url, { waitUntil: 'networkidle2' });
                 console.log(`[INFO] Page loaded. Taking screenshot...`);
-        
+            
                 screenshotBuffer = await page.screenshot();
                 console.log(`[INFO] Screenshot captured successfully`);
                 await browser.close();
                 console.log(`[INFO] Browser instance closed`);
         
-                if (!Buffer.isBuffer(screenshotBuffer)) {
-                    throw new Error('Screenshot buffer is invalid.');
+                // Check the integrity of the screenshot buffer before proceeding
+                if (!screenshotBuffer || screenshotBuffer.length === 0) {
+                    throw new Error('Screenshot buffer is empty or invalid.');
                 }
-
+        
+                console.log(`Screenshot buffer size: ${Buffer.byteLength(screenshotBuffer)} bytes`);
+        
                 // Resize screenshot directly without saving to a file
                 const resizeStartTime = Date.now();
                 const resizedScreenshotBuffer = await sharp(screenshotBuffer)
@@ -78,24 +81,24 @@ module.exports = {
                     .toBuffer();
                 const resizeEndTime = Date.now();
                 console.log(`[INFO] Screenshot resized in ${(resizeEndTime - resizeStartTime) / 1000}s`);
-
+        
                 const captureEndTime = Date.now();
                 executionTime = ((captureEndTime - captureStartTime) / 1000).toFixed(2);
-    
+            
                 const imgSize = (Buffer.byteLength(resizedScreenshotBuffer) / 1024).toFixed(2);
-
+        
                 const embed = new EmbedBuilder()
                     .setColor('#cb668b')
                     .setTitle(url)
                     .setImage('attachment://screenshot.png')
                     .setFooter(`1920x1080, ${imgSize}kb, took ${executionTime} seconds`);
-
+        
                 await interaction.editReply({
                     embeds: [embed],
                     files: [{ attachment: resizedScreenshotBuffer, name: 'screenshot.png' }],
                 });
                 console.log(`[INFO] Screenshot sent to the user`);
-        
+            
             } catch (error) {
                 console.error(`[ERROR] Error capturing screenshot: ${error.message}`);
                 if (screenshotBuffer) {
@@ -107,13 +110,13 @@ module.exports = {
                             .toBuffer();
                         const fallbackEndTime = Date.now();
                         console.log(`[INFO] Screenshot resized in ${(fallbackEndTime - fallbackStartTime) / 1000}s`);
-
+        
                         const embed = new EmbedBuilder()
                             .setColor('#0099ff')
                             .setTitle('Screenshot Error')
-                            .setDescription('An error occurred, but we were able to capture a screenshot.')
+                            .setDescription('An error occurred, here\'s the screenshot.')
                             .setImage('attachment://screenshot.png');
-
+        
                         await interaction.editReply({
                             content: 'Here is the screenshot:',
                             embeds: [embed],
@@ -131,7 +134,7 @@ module.exports = {
                     });
                 }
             }
-        }
+        }        
 
         if (subcommand === 'download') {
             const url = interaction.options.getString('url');
