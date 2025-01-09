@@ -41,7 +41,11 @@ module.exports = {
 
             try {
                 console.log(`[INFO] Launching Puppeteer browser instance...`);
-                const browser = await puppeteer.launch();
+                const browser = await puppeteer.launch({
+                    executablePath: '/usr/bin/chromium-browser',
+                    headless: true,
+                    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+                });
                 const page = await browser.newPage();
                 console.log(`[INFO] Navigating to URL: ${url}`);
 
