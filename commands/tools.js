@@ -401,7 +401,7 @@ module.exports = {
                                     )
                                     .setFooter({ text: 'Audio extracted using FFmpeg' });
 
-                                interaction.followUp({
+                                interaction.reply({
                                     embeds: [embed],
                                 });
                                 setTimeout(() => {
