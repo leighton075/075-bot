@@ -1,5 +1,4 @@
 const { SlashCommandBuilder } = require('discord.js');
-const ytdl = require('ytdl-core');
 const { google } = require('googleapis');
 const youtube = google.youtube('v3');
 const youtubeApiKey = process.env.YOUTUBE_API_KEY;

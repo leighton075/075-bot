@@ -1,10 +1,7 @@
 const { Client, GatewayIntentBits, Collection, AuditLogEvent, EmbedBuilder, Events } = require('discord.js');
 const { clientId, guildId, token } = require('./config.json');
 const fs = require('node:fs');
-const path = require('node:path');
 require('dotenv').config();
-
-const discordToken = process.env.DISCORD_TOKEN;
 
 const client = new Client({
     intents: [
