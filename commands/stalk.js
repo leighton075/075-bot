@@ -47,6 +47,6 @@ module.exports = {
             console.error('Error executing /stalk command:', error);
             await interaction.followUp('An error occurred while searching. Please try again later.');
         }
-        console.log(`Execution time: ${Date.now() - startTime}ms`);
+        console.log(`Execution time: ${(Date.now() - startTime) / 1000}ms`);
     },
 };
