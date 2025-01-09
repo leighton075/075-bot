@@ -84,6 +84,9 @@ module.exports = {
             
                 const page = await browser.newPage();
                 console.log(`[INFO] Navigating to URL: ${url}`);
+
+                await page.setViewport({ width: 1920, height: 1080 });
+
                 await page.goto(url, { waitUntil: 'networkidle2' });
                 console.log(`[INFO] Page loaded. Taking screenshot...`);
             
@@ -99,7 +102,10 @@ module.exports = {
                 console.log(`Screenshot buffer size: ${Buffer.byteLength(screenshotBuffer)} bytes`);
                 const resizeStartTime = Date.now();
                 const resizedScreenshotBuffer = await sharp(screenshotBuffer)
-                    .resize(width, height)
+                    .resize(width, height, {
+                        fit: sharp.fit.inside,
+                        withoutEnlargement: true
+                    })
                     .toBuffer();
                 const resizeEndTime = Date.now();
                 console.log(`[INFO] Screenshot resized in ${(resizeEndTime - resizeStartTime) / 1000}s`);
