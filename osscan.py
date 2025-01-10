@@ -15,10 +15,11 @@ def ping(host):
 def scan_os(target_ip):
     nm = nmap.PortScanner()
     
+    print(f"Scanning {target_ip} for OS...")
     nm.scan(target_ip, arguments="-O")
     
     if target_ip in nm.all_hosts():
-        if 'osmatch' in nm[target_ip]:
+        if 'osmatch' in nm[target_ip] and nm[target_ip]['osmatch']:
             os_details = nm[target_ip]['osmatch']
             print(f"OS detected: {os_details[0]['name']} ({os_details[0]['accuracy']}%)")
         else:
