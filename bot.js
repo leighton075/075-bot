@@ -48,7 +48,7 @@ for (const file of commandFiles) {
     }
 }
 
-lient.once('ready', async () => {
+client.once('ready', async () => {
     console.log(`${client.user.tag} has logged in.`);
     console.log(`Loaded ${commandFiles.length} commands locally.`);
 
