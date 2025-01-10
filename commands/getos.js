@@ -18,7 +18,6 @@ module.exports = {
             ephemeral: true
         });
 
-        // Run the Python script to scan the target
         exec(`python3 osscan.py ${target}`, (error, stdout, stderr) => {
             if (error) {
                 console.error(`[ERROR] Python script execution error: ${error}`);
@@ -30,7 +29,6 @@ module.exports = {
                 return interaction.followUp(`Error: ${stderr}`);
             }
 
-            // Output the results from the Python script
             console.log(stdout);
             interaction.followUp(`Scan results:\n\`\`\`${stdout}\`\`\``);
         });
