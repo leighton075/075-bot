@@ -27,7 +27,7 @@ module.exports = {
                 await interaction.followUp(`Sorry, there was an error retrieving the OS information: ${error.message}`);
             }
         } catch (error) {
-            message.reply(`Sorry, there was an error retrieving your IP address: ${error.message}`);
+            interaction.reply(`Sorry, there was an error retrieving your IP address: ${error.message}`);
         }
     },
 };
