@@ -1,5 +1,6 @@
 const { Client, GatewayIntentBits, Collection, AuditLogEvent, EmbedBuilder, Events } = require('discord.js');
 const { clientId, guildId, token } = require('./config.json');
+const SpotifyWebApi = require('spotify-web-api-node');
 const fs = require('node:fs');
 require('dotenv').config();
 
@@ -11,6 +12,11 @@ const client = new Client({
         GatewayIntentBits.GuildVoiceStates,
         GatewayIntentBits.MessageContent,
     ],
+});
+
+const spotifyApi = new SpotifyWebApi({
+    clientId: process.env.SPOTIFY_CLIENT_ID,
+    clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
 });
 
 const commands = new Collection();
@@ -29,22 +35,39 @@ for (const file of commandFiles) {
     }
 }
 
-client.on('ready', () => {
+client.on('ready', async () => {
     console.log(`${client.user.tag} has logged in.`);
     console.log(`Loaded ${commandFiles.length} commands locally.`);
+
+    try {
+        const data = await spotifyApi.clientCredentialsGrant();
+        spotifyApi.setAccessToken(data.body['access_token']);
+        console.log('Spotify access token acquired.');
+    } catch (err) {
+        console.error('Error getting Spotify access token:', err);
+        return;
+    }
+
+    const trackName = 'Osmosis';
+
     // client.user.setActivity('Good Kid', {type: 2});
-    client.user.setPresence({
-        activities: [
-            {
-                name: 'Good Kid',
-                type: 2,
-                assets: {
-                    large_image: 'goodkid',
-                    large_text: 'Good Kid',
-                }
-            }
-        ]
-    });
+    try {
+        const trackData = await spotifyApi.searchTracks(trackName, { limit: 1 });
+        const track = trackData.body.tracks.items[0];
+
+        if (track) {
+            // Set the bot's activity to "Listening to <song>"
+            client.user.setActivity(`Listening to ${track.name} by ${track.artists[0].name}`, {
+                type: 'LISTENING',
+                url: track.external_urls.spotify // Direct link to the Spotify song
+            });
+            console.log(`Bot is now listening to: ${track.name}`);
+        } else {
+            console.log('Song not found.');
+        }
+    } catch (err) {
+        console.error('Error searching for the track:', err);
+    }
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
