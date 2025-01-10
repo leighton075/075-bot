@@ -49,23 +49,29 @@ for (const file of commandFiles) {
 }
 
 client.once('ready', async () => {
-    console.log(`${client.user.tag} has logged in.`);
-    console.log(`Loaded ${commandFiles.length} commands locally.`);
+    console.log(`[INFO] ${client.user.tag} has logged in.`);
+    console.log(`[INFO] Loaded ${commandFiles.length} commands locally.`);
 
     await authenticateSpotify();
 
     const trackName = 'Osmosis';
     try {
+        console.log(`[DEBUG] Searching for track: ${trackName}`);
         const trackData = await spotifyApi.searchTracks(trackName, { limit: 1 });
+        console.log(`[DEBUG] Track data received:`, trackData.body);
+
         const track = trackData.body.tracks.items[0];
 
         if (track) {
+            console.log(`[DEBUG] Track found: ${track.name} by ${track.artists[0].name}`);
+
+            console.log(`[DEBUG] Setting activity with URL: ${track.external_urls.spotify}`);
             client.user.setActivity(`${track.name} by ${track.artists[0].name}`, {
                 type: 2,
                 url: track.external_urls.spotify
             });
 
-            console.log(`Bot is now listening to: ${track.name}`);
+            console.log(`[INFO] Bot is now listening to: ${track.name}`);
 
             const trackImage = track.album.images[0].url;
             const trackUrl = track.external_urls.spotify;
@@ -83,15 +89,19 @@ client.once('ready', async () => {
                             icon_url: 'https://i.scdn.co/image/ab6761610000e5eb62b311a0a9ecf97a2f80ddb8',
                         },
                     }]
+                }).then(() => {
+                    console.log(`[INFO] Embed sent successfully.`);
+                }).catch((err) => {
+                    console.error(`[ERROR] Error sending embed: ${err}`);
                 });
             } else {
-                console.log('Channel not found or bot lacks permissions to send messages.');
+                console.log(`[ERROR] Channel not found or bot lacks permissions to send messages.`);
             }
         } else {
-            console.log('Song not found.');
+            console.log(`[ERROR] Song not found.`);
         }
     } catch (err) {
-        console.error('Error searching for the track:', err);
+        console.error(`[ERROR] Error searching for the track: ${err}`);
     }
 });
 
