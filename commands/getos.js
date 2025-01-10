@@ -19,7 +19,7 @@ module.exports = {
         });
 
         // Run the Python script to scan the target
-        exec(`python3 os_scan.py ${target}`, (error, stdout, stderr) => {
+        exec(`python3 osscan.py ${target}`, (error, stdout, stderr) => {
             if (error) {
                 console.error(`[ERROR] Python script execution error: ${error}`);
                 return interaction.followUp(`Sorry, there was an error executing the scan.`);
