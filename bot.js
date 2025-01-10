@@ -19,6 +19,19 @@ const spotifyApi = new SpotifyWebApi({
     clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
 });
 
+let accessToken = '';
+
+async function authenticateSpotify() {
+    try {
+        const data = await spotifyApi.clientCredentialsGrant();
+        accessToken = data.body['access_token'];
+        spotifyApi.setAccessToken(accessToken);
+        console.log('Spotify access token acquired.');
+    } catch (err) {
+        console.error('Error getting Spotify access token:', err);
+    }
+}
+
 const commands = new Collection();
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
 
@@ -35,33 +48,45 @@ for (const file of commandFiles) {
     }
 }
 
-client.on('ready', async () => {
+lient.once('ready', async () => {
     console.log(`${client.user.tag} has logged in.`);
     console.log(`Loaded ${commandFiles.length} commands locally.`);
 
-    try {
-        const data = await spotifyApi.clientCredentialsGrant();
-        spotifyApi.setAccessToken(data.body['access_token']);
-        console.log('Spotify access token acquired.');
-    } catch (err) {
-        console.error('Error getting Spotify access token:', err);
-        return;
-    }
+    await authenticateSpotify();
 
     const trackName = 'Osmosis';
-
-    // client.user.setActivity('Good Kid', {type: 2});
     try {
         const trackData = await spotifyApi.searchTracks(trackName, { limit: 1 });
         const track = trackData.body.tracks.items[0];
 
         if (track) {
-            // Set the bot's activity to "Listening to <song>"
-            client.user.setActivity(`Listening to ${track.name} by ${track.artists[0].name}`, {
+            client.user.setActivity(`${track.name} by ${track.artists[0].name}`, {
                 type: 'LISTENING',
-                url: track.external_urls.spotify // Direct link to the Spotify song
+                url: track.external_urls.spotify
             });
+
             console.log(`Bot is now listening to: ${track.name}`);
+
+            const trackImage = track.album.images[0].url;
+            const trackUrl = track.external_urls.spotify;
+
+            const channel = client.channels.cache.get('1319595096244752494');
+            if (channel) {
+                channel.send({
+                    embeds: [{
+                        title: track.name,
+                        description: `Now playing: ${track.name} by ${track.artists[0].name}`,
+                        url: trackUrl,
+                        image: { url: trackImage },
+                        footer: {
+                            text: 'Listen on Spotify',
+                            icon_url: 'https://i.scdn.co/image/ab6761610000e5eb62b311a0a9ecf97a2f80ddb8',
+                        },
+                    }]
+                });
+            } else {
+                console.log('Channel not found or bot lacks permissions to send messages.');
+            }
         } else {
             console.log('Song not found.');
         }
