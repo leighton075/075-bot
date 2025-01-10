@@ -12,7 +12,7 @@ module.exports = {
 
     async execute(interaction) {
         try {
-            const ip = interaction.option.getString('ip');
+            const ip = interaction.options.getString('ip');
 
             try {
                 const ipInfo = await axios.get(`https://ipinfo.io/${ip}/json`);
