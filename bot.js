@@ -61,7 +61,7 @@ client.once('ready', async () => {
 
         if (track) {
             client.user.setActivity(`${track.name} by ${track.artists[0].name}`, {
-                type: 'LISTENING',
+                type: 2,
                 url: track.external_urls.spotify
             });
 
