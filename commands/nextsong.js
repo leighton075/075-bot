@@ -1,5 +1,7 @@
 const { SlashCommandBuilder } = require('discord.js');
-const { spotifyApi } = require('../bot');
+const { spotifyApi, client } = require('../bot');
+
+let lastTrack = null;
 
 module.exports = {
     data: new SlashCommandBuilder()
