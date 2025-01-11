@@ -116,10 +116,7 @@ module.exports = {
 
             currentTimeout = setTimeout(async () => {
                 console.log('[DEBUG] Song has finished, switching to the next song...');
-                if (!interaction.replied) {
-                    console.log('[DEBUG] Replying to interaction...');
-                    await interaction.reply({ content: 'Next song is playing now.' });
-                }
+                await interaction.followUp({ content: 'Next song is playing now.' });
                 await this.execute(interaction, client);
             }, songDuration);
 
