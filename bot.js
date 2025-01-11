@@ -32,6 +32,8 @@ async function authenticateSpotify() {
     }
 }
 
+module.exports = client;
+
 const commands = new Collection();
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
 
@@ -47,8 +49,6 @@ for (const file of commandFiles) {
         console.error(`Error loading command file ${file}:`, error);
     }
 }
-
-let lastTrack = null;
 
 client.once('ready', async () => {
     console.log(`[INFO] ${client.user.tag} has logged in.`);
@@ -100,8 +100,6 @@ client.once('ready', async () => {
             });
 
             console.log(`[INFO] Bot is now listening to: ${randomTrack.name}`);
-
-            lastTrack = randomTrack.name;
 
             const trackImage = randomTrack.album.images[0].url;
             const trackUrl = randomTrack.external_urls.spotify;
