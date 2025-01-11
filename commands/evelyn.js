@@ -5,7 +5,7 @@ const path = require('path');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('evelyn')
-        .setDescription('Get a random edit of evelyn'),
+        .setDescription('Get a random edit of Evelyn'),
 
     async execute(interaction) {
         try {
@@ -16,20 +16,19 @@ module.exports = {
             const validFiles = files.filter(file => file.endsWith('.mp4'));
 
             if (validFiles.length === 0) {
-                return interaction.reply({ content: 'No evelyn edits available at the moment.'});
+                return interaction.editReply({ content: 'No Evelyn edits available at the moment.' });
             }
 
             const randomFile = validFiles[Math.floor(Math.random() * validFiles.length)];
             const filePath = path.join(folderPath, randomFile);
 
-            return interaction.reply({
+            return interaction.editReply({
                 files: [filePath],
             });
-            
 
         } catch (error) {
             console.error('Error getting a video of Evelyn:', error);
-            return interaction.reply({
+            return interaction.editReply({
                 content: 'There was an error getting a video of Evelyn. Please try again later.',
             });
         }
