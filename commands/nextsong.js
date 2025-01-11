@@ -13,9 +13,9 @@ async function authenticateSpotify() {
         const data = await spotifyApi.clientCredentialsGrant();
         accessToken = data.body['access_token'];
         spotifyApi.setAccessToken(accessToken);
-        console.log('Spotify access token acquired.');
+        console.log('[DEBUG] Spotify access token acquired.');
     } catch (err) {
-        console.error('Error getting Spotify access token:', err);
+        console.error('[ERROR] Error getting Spotify access token:', err);
     }
 }
 
@@ -40,13 +40,14 @@ module.exports = {
                 .setDescription('Song from the current playlist to listen to')
                 .addStringOption(option =>
                     option.setName('song')
-                        .setDescription('song to play')
+                        .setDescription('Song to play')
                         .setRequired(true))),
 
     async autocomplete(interaction) {
-        const focusedOption = interaction.option.getFocused(true);
+        const focusedOption = interaction.options.getFocused(true);
 
-        if (focusedOption.name === 'playlistId') {
+        if (focusedOption.name === 'playlistid') {
+            console.log('[DEBUG] Autocomplete triggered for playlistid');
             await authenticateSpotify();
             const playlists = await spotifyApi.getUserPlaylists();
             const playlistChoices = playlists.body.items.map(item => ({
@@ -58,13 +59,16 @@ module.exports = {
                 playlist.name.toLowerCase().includes(focusedOption.value.toLowerCase())
             );
 
+            console.log('[DEBUG] Returning filtered playlists:', filteredPlaylists);
             await interaction.respond(filteredPlaylists);
         }
     },
 
     async execute(interaction, client) {
         try {
+            console.log('[DEBUG] Execute command triggered.');
             const playlistId = interaction.options.getString('playlistid');
+            console.log('[DEBUG] Selected Playlist ID:', playlistId);
             await authenticateSpotify();
 
             let allTracks = [];
@@ -78,14 +82,15 @@ module.exports = {
 
                 const tracks = playlistData.body.items;
                 if (tracks.length === 0) {
+                    console.log('[DEBUG] No tracks found in the playlist.');
                     return interaction.reply({ content: 'No tracks found in the playlist.' });
                 }
 
                 allTracks = allTracks.concat(tracks);
                 nextPage = playlistData.body.next;
-
             } while (nextPage);
 
+            console.log('[DEBUG] Tracks fetched:', allTracks.length);
             if (allTracks.length === 0) {
                 return interaction.reply({ content: 'No tracks found in the playlist.' });
             }
@@ -94,35 +99,33 @@ module.exports = {
                 name: item.track.name,
                 value: item.track.id,
             }));
+            console.log('[DEBUG] Song choices prepared:', songChoices.length);
 
-            const songOption = interaction.options.get('song');
-            songOption.choices = songChoices;
+            const songName = interaction.options.getString('song');
+            console.log('[DEBUG] Selected song name:', songName);
+            const song = allTracks.find(track => track.track.name.toLowerCase() === songName.toLowerCase());
 
-            let randomTrack = allTracks[Math.floor(Math.random() * allTracks.length)].track;
-
-            while (randomTrack.name === lastTrack) {
-                randomTrack = allTracks[Math.floor(Math.random() * allTracks.length)].track;
+            if (!song) {
+                console.log('[DEBUG] Song not found in the playlist.');
+                return interaction.reply({ content: 'The song you specified was not found in the playlist.' });
             }
 
-            if (!randomTrack) {
-                return interaction.reply({ content: 'Failed to select a random track.' });
-            }
-
-            client.user.setActivity(`${randomTrack.name} by ${randomTrack.artists[0].name}`, {
+            const track = song.track;
+            client.user.setActivity(`${track.name} by ${track.artists[0].name}`, {
                 type: 2,
-                url: randomTrack.external_urls.spotify
+                url: track.external_urls.spotify
             });
 
+            console.log('[DEBUG] Now playing:', track.name);
             const channel = client.channels.cache.get('1319595096244752494');
             if (channel) {
-                console.log(`[INFO] Now listening to: ${randomTrack.name}`);
-                return interaction.reply({ content: `Now listening to: ${randomTrack.name} by ${randomTrack.artists[0].name}` });
+                return interaction.reply({ content: `Now listening to: ${track.name} by ${track.artists[0].name}` });
             }
 
             return interaction.reply({ content: 'Failed to find a channel to send the track info.' });
 
         } catch (error) {
-            console.error('Error changing song:', error);
+            console.error('[ERROR] Error changing song:', error);
             return interaction.reply({ content: 'There was an error changing the song. Please try again later.' });
         }
     },
