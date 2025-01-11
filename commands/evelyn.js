@@ -1,6 +1,5 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const fs = require('fs');
-const { content } = require('googleapis/build/src/apis/content');
 const path = require('path');
 
 module.exports = {
