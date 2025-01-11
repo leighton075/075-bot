@@ -19,7 +19,7 @@ const spotifyApi = new SpotifyWebApi({
     clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
 });
 
-module.exports = { spotifyApi };
+module.exports = { spotifyApi, client };
 
 let accessToken = '';
 
