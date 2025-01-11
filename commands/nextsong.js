@@ -8,6 +8,7 @@ const spotifyApi = new SpotifyWebApi({
 
 let accessToken = '';
 let currentTimeout = null;
+let replied = false;  // Flag to track if the interaction has been replied to
 
 async function authenticateSpotify() {
     try {
@@ -35,6 +36,11 @@ module.exports = {
 
     async execute(interaction, client) {
         try {
+            if (replied) {
+                console.log('[DEBUG] Interaction already replied to, skipping...');
+                return; // Skip the interaction if already replied
+            }
+
             console.log('[DEBUG] Command executed, checking for song argument...');
             const playlistId = '210tfDJT6HnJeGwyg01dBd';
             await authenticateSpotify();
@@ -106,8 +112,9 @@ module.exports = {
             const channel = client.channels.cache.get('1319595096244752494');
             if (channel) {
                 console.log(`[DEBUG] Now listening to: ${randomTrack.name}`);
-                // Defer the reply only once here
+                // Defer the reply only once here, and set the flag
                 await interaction.deferReply(); // Defer the reply once
+                replied = true;  // Set the flag to true after deferring
                 await interaction.followUp({ content: `Now listening to: ${randomTrack.name} by ${randomTrack.artists[0].name}` });
             }
 
@@ -118,8 +125,10 @@ module.exports = {
 
             currentTimeout = setTimeout(async () => {
                 console.log('[DEBUG] Song has finished, switching to the next song...');
-                // No interaction.reply() here to avoid the error
-                await this.execute(interaction, client);
+                // Prevent recursion by ensuring no further replies or deferrals
+                if (!replied) {
+                    await this.execute(interaction, client);
+                }
             }, songDuration);
 
         } catch (error) {
