@@ -116,11 +116,6 @@ module.exports = {
 
             currentTimeout = setTimeout(async () => {
                 console.log('[DEBUG] Song has finished, switching to the next song...');
-                const nextChannel = client.channels.cache.get('1319595096244752494');
-                if (nextChannel) {
-                    // Use channel.send() instead of interaction.followUp() to avoid the error
-                    await nextChannel.send('Next song is playing now.');
-                }
                 await this.execute(interaction, client);
             }, songDuration);
 
