@@ -23,12 +23,49 @@ let lastTrack = null;
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('nextsong')
-        .setDescription('Change the song the bot is listening to.'),
+        .setName('listento')
+        .setDescription('Change the song the bot is listening to.')
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName('playlist')
+                .setDescription('Which playlist to listen to')
+                .addStringOption(option =>
+                    option.setName('playlistId')
+                        .setDescription('Id of the playlist to listen to')
+                        .setRequired(false)
+                        .setAutocomplete(true)))
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName('song')
+                .setDescription('Song from the current playlist to listen to')
+                .addStringOption(option =>
+                    option.setName('song')
+                        .setDescription('song to play')
+                        .setRequired(true)))
+                        .addChoices([]),
+
+    async autocomplete(interaction) {
+        const focusedOption = interaction.option.getFocused(true);
+
+        if (focusedOption.name === 'playlistId') {
+            await authenticateSpotify();
+            const playlists = await spotifyApi.getUserPlaylists();
+            const playlistChoices = playlists.body.items.map(item => ({
+                name: item.name,
+                value: item.id,
+            }));
+
+            const filteredPlaylists = playlistChoices.filter(playlist =>
+                playlist.name.toLowerCase().includes(focusedOption.value.toLowerCase())
+            );
+
+            await interaction.respond(filteredPlaylists);
+        }
+    },
 
     async execute(interaction, client) {
         try {
-            const playlistId = '210tfDJT6HnJeGwyg01dBd';
+            const playlistId = interaction.options.getString('playlistId');
             await authenticateSpotify();
 
             let allTracks = [];
@@ -41,7 +78,6 @@ module.exports = {
                 });
 
                 const tracks = playlistData.body.items;
-
                 if (tracks.length === 0) {
                     return interaction.reply({ content: 'No tracks found in the playlist.' });
                 }
@@ -54,6 +90,14 @@ module.exports = {
             if (allTracks.length === 0) {
                 return interaction.reply({ content: 'No tracks found in the playlist.' });
             }
+
+            const songChoices = allTracks.map(item => ({
+                name: item.track.name,
+                value: item.track.id,
+            }));
+
+            const songOption = interaction.options.get('song');
+            songOption.choices = songChoices;
 
             let randomTrack = allTracks[Math.floor(Math.random() * allTracks.length)].track;
 
