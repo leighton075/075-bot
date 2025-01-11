@@ -1,8 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js');
 const { spotifyApi, client } = require('../bot');
 
-let lastTrack = null;
-
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('nextsong')
@@ -37,10 +35,6 @@ module.exports = {
             }
 
             let randomTrack = allTracks[Math.floor(Math.random() * allTracks.length)].track;
-
-            while (randomTrack.name === lastTrack) {
-                randomTrack = allTracks[Math.floor(Math.random() * allTracks.length)].track;
-            }
 
             if (!randomTrack) {
                 return interaction.reply({ content: 'Failed to select a random track.' });
