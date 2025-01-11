@@ -74,6 +74,7 @@ module.exports = {
             let allTracks = [];
             let nextPage = null;
 
+            // Fetch all tracks from the playlist
             do {
                 const playlistData = await spotifyApi.getPlaylistTracks(playlistId, {
                     limit: 100,
@@ -95,12 +96,14 @@ module.exports = {
                 return interaction.reply({ content: 'No tracks found in the playlist.' });
             }
 
+            // Prepare song choices
             const songChoices = allTracks.map(item => ({
                 name: item.track.name,
                 value: item.track.id,
             }));
             console.log('[DEBUG] Song choices prepared:', songChoices.length);
 
+            // Get the song from the interaction
             const songName = interaction.options.getString('song');
             console.log('[DEBUG] Selected song name:', songName);
             const song = allTracks.find(track => track.track.name.toLowerCase() === songName.toLowerCase());
@@ -110,6 +113,7 @@ module.exports = {
                 return interaction.reply({ content: 'The song you specified was not found in the playlist.' });
             }
 
+            // Set bot's activity to the selected song
             const track = song.track;
             client.user.setActivity(`${track.name} by ${track.artists[0].name}`, {
                 type: 2,
