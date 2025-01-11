@@ -58,17 +58,36 @@ client.once('ready', async () => {
 
     try {
         console.log(`[DEBUG] Fetching tracks from playlist ID: ${playlistId}`);
-        const playlistData = await spotifyApi.getPlaylistTracks(playlistId, { limit: 128 });
+        
+        let allTracks = [];
+        let nextPage = null;
 
-        console.log(`[DEBUG] Playlist data received:`, playlistData.body);
+        do {
+            const playlistData = await spotifyApi.getPlaylistTracks(playlistId, {
+                limit: 100,
+                offset: nextPage ? allTracks.length : 0
+            });
 
-        const tracks = playlistData.body.items;
-        if (tracks.length === 0) {
+            console.log(`[DEBUG] Playlist data received:`, playlistData.body);
+            const tracks = playlistData.body.items;
+
+            if (tracks.length === 0) {
+                console.log(`[ERROR] No tracks found in the playlist.`);
+                break;
+            }
+
+            allTracks = allTracks.concat(tracks);
+
+            nextPage = playlistData.body.next;
+
+        } while (nextPage);
+
+        if (allTracks.length === 0) {
             console.log(`[ERROR] No tracks found in the playlist.`);
             return;
         }
 
-        const randomTrack = tracks[Math.floor(Math.random() * tracks.length)].track;
+        const randomTrack = allTracks[Math.floor(Math.random() * allTracks.length)].track;
 
         if (randomTrack) {
             console.log(`[DEBUG] Random track selected: ${randomTrack.name} by ${randomTrack.artists[0].name}`);
