@@ -102,7 +102,7 @@ client.once('ready', async () => {
 
             console.log(`[INFO] Bot is now listening to: ${randomTrack.name}`);
 
-            lastTrack = track.name;
+            lastTrack = randomTrack.name;
 
             const trackImage = randomTrack.album.images[0].url;
             const trackUrl = randomTrack.external_urls.spotify;

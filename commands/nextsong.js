@@ -2,7 +2,7 @@ const { SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('change-song')
+        .setName('nextsong')
         .setDescription('Change the song the bot is listening to.'),
 
     async execute(interaction) {
