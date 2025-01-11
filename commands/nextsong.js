@@ -106,10 +106,16 @@ module.exports = {
             // Get the song from the interaction
             const songName = interaction.options.getString('song');
             console.log('[DEBUG] Selected song name:', songName);
+
+            if (!songName) {
+                console.log('[ERROR] No song name provided.');
+                return interaction.reply({ content: 'Please specify a song name to play.' });
+            }
+
             const song = allTracks.find(track => track.track.name.toLowerCase() === songName.toLowerCase());
 
             if (!song) {
-                console.log('[DEBUG] Song not found in the playlist.');
+                console.log('[ERROR] Song not found in the playlist.');
                 return interaction.reply({ content: 'The song you specified was not found in the playlist.' });
             }
 
