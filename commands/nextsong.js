@@ -1,6 +1,4 @@
 const { SlashCommandBuilder } = require('discord.js');
-const fs = require('fs');
-const path = require('path');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -39,6 +37,10 @@ module.exports = {
 
             while (randomTrack.name === lastTrack) {
                 randomTrack = allTracks[Math.floor(Math.random() * allTracks.length)].track;
+            }
+
+            if (!randomTrack) {
+                return interaction.reply({ content: 'Failed to select a random track.' });
             }
 
             client.user.setActivity(`${randomTrack.name} by ${randomTrack.artists[0].name}`, {
