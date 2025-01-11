@@ -1,6 +1,5 @@
 const { SlashCommandBuilder } = require('discord.js');
 const SpotifyWebApi = require('spotify-web-api-node');
-const client = require('../bot');
 
 const spotifyApi = new SpotifyWebApi({
     clientId: process.env.SPOTIFY_CLIENT_ID,
@@ -27,7 +26,7 @@ module.exports = {
         .setName('nextsong')
         .setDescription('Change the song the bot is listening to.'),
 
-    async execute(interaction) {
+    async execute(interaction, client) {
         try {
             const playlistId = '210tfDJT6HnJeGwyg01dBd';
             await authenticateSpotify();
