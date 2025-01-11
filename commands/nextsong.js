@@ -32,7 +32,7 @@ module.exports = {
                 .addStringOption(option =>
                     option.setName('playlistid')
                         .setDescription('Id of the playlist to listen to')
-                        .setRequired(false)
+                        .setRequired(true)
                         .setAutocomplete(true)))
         .addSubcommand(subcommand =>
             subcommand
@@ -41,8 +41,7 @@ module.exports = {
                 .addStringOption(option =>
                     option.setName('song')
                         .setDescription('song to play')
-                        .setRequired(true)))
-                        .addChoices([]),
+                        .setRequired(true))),
 
     async autocomplete(interaction) {
         const focusedOption = interaction.option.getFocused(true);
