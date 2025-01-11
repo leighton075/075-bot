@@ -10,12 +10,13 @@ let accessToken = '';
 
 async function authenticateSpotify() {
     try {
+        console.log('[INFO] Attempting to authenticate with Spotify...');
         const data = await spotifyApi.clientCredentialsGrant();
         accessToken = data.body['access_token'];
         spotifyApi.setAccessToken(accessToken);
-        console.log('Spotify access token acquired.');
+        console.log('[INFO] Spotify access token acquired.');
     } catch (err) {
-        console.error('Error getting Spotify access token:', err);
+        console.error('[ERROR] Error getting Spotify access token:', err);
     }
 }
 
@@ -24,47 +25,77 @@ let lastTrack = null;
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('nextsong')
-        .setDescription('Change the song the bot is listening to.'),
+        .setDescription('Change the song the bot is listening to.')
+        .addStringOption(option =>
+            option
+                .setName('song')
+                .setDescription('Play a specific song')
+                .setRequired(false)),
 
     async execute(interaction, client) {
         try {
+            console.log('[INFO] Command executed, checking for song argument...');
             const playlistId = '210tfDJT6HnJeGwyg01dBd';
             await authenticateSpotify();
 
-            let allTracks = [];
-            let nextPage = null;
+            let randomTrack = null;
 
-            do {
-                const playlistData = await spotifyApi.getPlaylistTracks(playlistId, {
-                    limit: 100,
-                    offset: nextPage ? allTracks.length : 0,
-                });
+            if (interaction.options.getString('song')) {
+                console.log('[INFO] Song argument provided, searching for the song...');
+                const songQuery = interaction.options.getString('song');
+                const searchResult = await spotifyApi.searchTracks(songQuery, { limit: 1 });
 
-                const tracks = playlistData.body.items;
+                if (searchResult.body.tracks.items.length === 0) {
+                    console.log('[ERROR] No song found with that name.');
+                    return interaction.reply({ content: 'No song found with that name.' });
+                }
 
-                if (tracks.length === 0) {
+                randomTrack = searchResult.body.tracks.items[0];
+                console.log(`[INFO] Found song: ${randomTrack.name} by ${randomTrack.artists[0].name}`);
+            } else {
+                console.log('[INFO] No song argument provided, fetching a random track from the playlist...');
+                let allTracks = [];
+                let nextPage = null;
+
+                do {
+                    console.log('[INFO] Fetching playlist tracks...');
+                    const playlistData = await spotifyApi.getPlaylistTracks(playlistId, {
+                        limit: 100,
+                        offset: nextPage ? allTracks.length : 0,
+                    });
+
+                    const tracks = playlistData.body.items;
+
+                    if (tracks.length === 0) {
+                        console.log('[ERROR] No tracks found in the playlist.');
+                        return interaction.reply({ content: 'No tracks found in the playlist.' });
+                    }
+
+                    allTracks = allTracks.concat(tracks);
+                    nextPage = playlistData.body.next;
+
+                } while (nextPage);
+
+                if (allTracks.length === 0) {
+                    console.log('[ERROR] No tracks found in the playlist.');
                     return interaction.reply({ content: 'No tracks found in the playlist.' });
                 }
 
-                allTracks = allTracks.concat(tracks);
-                nextPage = playlistData.body.next;
-
-            } while (nextPage);
-
-            if (allTracks.length === 0) {
-                return interaction.reply({ content: 'No tracks found in the playlist.' });
-            }
-
-            let randomTrack = allTracks[Math.floor(Math.random() * allTracks.length)].track;
-
-            while (randomTrack.name === lastTrack) {
                 randomTrack = allTracks[Math.floor(Math.random() * allTracks.length)].track;
+                console.log(`[INFO] Random track selected: ${randomTrack.name} by ${randomTrack.artists[0].name}`);
+
+                while (randomTrack.name === lastTrack) {
+                    console.log('[INFO] Selected track is the same as the last one. Choosing a new one...');
+                    randomTrack = allTracks[Math.floor(Math.random() * allTracks.length)].track;
+                }
             }
 
             if (!randomTrack) {
-                return interaction.reply({ content: 'Failed to select a random track.' });
+                console.log('[ERROR] Failed to select a track.');
+                return interaction.reply({ content: 'Failed to select a track.' });
             }
 
+            console.log(`[INFO] Setting activity to: ${randomTrack.name} by ${randomTrack.artists[0].name}`);
             client.user.setActivity(`${randomTrack.name} by ${randomTrack.artists[0].name}`, {
                 type: 2,
                 url: randomTrack.external_urls.spotify
@@ -76,10 +107,11 @@ module.exports = {
                 return interaction.reply({ content: `Now listening to: ${randomTrack.name} by ${randomTrack.artists[0].name}` });
             }
 
+            console.log('[ERROR] Failed to find a channel to send the track info.');
             return interaction.reply({ content: 'Failed to find a channel to send the track info.' });
 
         } catch (error) {
-            console.error('Error changing song:', error);
+            console.error('[ERROR] Error changing song:', error);
             return interaction.reply({ content: 'There was an error changing the song. Please try again later.' });
         }
     },
