@@ -7,8 +7,7 @@ const spotifyApi = new SpotifyWebApi({
 });
 
 let accessToken = '';
-let currentTimeout = null;
-let replied = false;  // Flag to track if the interaction has been replied to
+let currentInterval = null;  // Interval to switch songs every 2 minutes
 
 async function authenticateSpotify() {
     try {
@@ -24,6 +23,97 @@ async function authenticateSpotify() {
 
 let lastTrack = null;
 
+async function playRandomSong(interaction, client) {
+    const playlistId = '210tfDJT6HnJeGwyg01dBd';
+    await authenticateSpotify();
+
+    let randomTrack = null;
+
+    // Check if the user provided a custom song
+    if (interaction.options.getString('song')) {
+        console.log('[DEBUG] Song argument provided, searching for the song...');
+        const songQuery = interaction.options.getString('song');
+        const searchResult = await spotifyApi.searchTracks(songQuery, { limit: 1 });
+
+        if (searchResult.body.tracks.items.length === 0) {
+            console.log('[ERROR] No song found with that name.');
+            return interaction.reply({ content: 'No song found with that name.' });
+        }
+
+        randomTrack = searchResult.body.tracks.items[0];
+        console.log(`[DEBUG] Found song: ${randomTrack.name} by ${randomTrack.artists[0].name}`);
+    } else {
+        console.log('[DEBUG] No song argument provided, fetching a random track from the playlist...');
+        let allTracks = [];
+        let nextPage = null;
+
+        do {
+            console.log('[DEBUG] Fetching playlist tracks...');
+            const playlistData = await spotifyApi.getPlaylistTracks(playlistId, {
+                limit: 100,
+                offset: nextPage ? allTracks.length : 0,
+            });
+
+            const tracks = playlistData.body.items;
+
+            if (tracks.length === 0) {
+                console.log('[ERROR] No tracks found in the playlist.');
+                return interaction.reply({ content: 'No tracks found in the playlist.' });
+            }
+
+            allTracks = allTracks.concat(tracks);
+            nextPage = playlistData.body.next;
+
+        } while (nextPage);
+
+        if (allTracks.length === 0) {
+            console.log('[ERROR] No tracks found in the playlist.');
+            return interaction.reply({ content: 'No tracks found in the playlist.' });
+        }
+
+        randomTrack = allTracks[Math.floor(Math.random() * allTracks.length)].track;
+        console.log(`[DEBUG] Random track selected: ${randomTrack.name} by ${randomTrack.artists[0].name}`);
+
+        while (randomTrack.name === lastTrack) {
+            console.log('[DEBUG] Selected track is the same as the last one. Choosing a new one...');
+            randomTrack = allTracks[Math.floor(Math.random() * allTracks.length)].track;
+        }
+    }
+
+    if (!randomTrack) {
+        console.log('[ERROR] Failed to select a track.');
+        return interaction.reply({ content: 'Failed to select a track.' });
+    }
+
+    const songDuration = randomTrack.duration_ms;
+    console.log(`[DEBUG] Setting activity to: ${randomTrack.name} by ${randomTrack.artists[0].name}`);
+    client.user.setActivity(`${randomTrack.name} by ${randomTrack.artists[0].name}`, {
+        type: 2,
+        url: randomTrack.external_urls.spotify
+    });
+
+    const channel = client.channels.cache.get('1319595096244752494');
+    if (channel) {
+        console.log(`[DEBUG] Now listening to: ${randomTrack.name}`);
+        await interaction.deferReply();
+        await interaction.followUp({ content: `Now listening to: ${randomTrack.name} by ${randomTrack.artists[0].name}` });
+    }
+
+    lastTrack = randomTrack.name;
+
+    // Clear the previous interval if any
+    if (currentInterval) {
+        clearInterval(currentInterval);
+    }
+
+    // Set the interval to switch to the next song every 2 minutes (120,000 ms)
+    currentInterval = setInterval(async () => {
+        console.log('[DEBUG] Switching to the next song...');
+        await playRandomSong(interaction, client);  // Call to play a random song
+    }, 120000);  // 2 minutes
+
+}
+
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('nextsong')
@@ -36,104 +126,10 @@ module.exports = {
 
     async execute(interaction, client) {
         try {
-            if (replied) {
-                console.log('[DEBUG] Interaction already replied to, skipping...');
-                return; // Skip the interaction if already replied
-            }
-
-            console.log('[DEBUG] Command executed, checking for song argument...');
-            const playlistId = '210tfDJT6HnJeGwyg01dBd';
-            await authenticateSpotify();
-
-            let randomTrack = null;
-
-            if (interaction.options.getString('song')) {
-                console.log('[DEBUG] Song argument provided, searching for the song...');
-                const songQuery = interaction.options.getString('song');
-                const searchResult = await spotifyApi.searchTracks(songQuery, { limit: 1 });
-
-                if (searchResult.body.tracks.items.length === 0) {
-                    console.log('[ERROR] No song found with that name.');
-                    return interaction.reply({ content: 'No song found with that name.' });
-                }
-
-                randomTrack = searchResult.body.tracks.items[0];
-                console.log(`[DEBUG] Found song: ${randomTrack.name} by ${randomTrack.artists[0].name}`);
-            } else {
-                console.log('[DEBUG] No song argument provided, fetching a random track from the playlist...');
-                let allTracks = [];
-                let nextPage = null;
-
-                do {
-                    console.log('[DEBUG] Fetching playlist tracks...');
-                    const playlistData = await spotifyApi.getPlaylistTracks(playlistId, {
-                        limit: 100,
-                        offset: nextPage ? allTracks.length : 0,
-                    });
-
-                    const tracks = playlistData.body.items;
-
-                    if (tracks.length === 0) {
-                        console.log('[ERROR] No tracks found in the playlist.');
-                        return interaction.reply({ content: 'No tracks found in the playlist.' });
-                    }
-
-                    allTracks = allTracks.concat(tracks);
-                    nextPage = playlistData.body.next;
-
-                } while (nextPage);
-
-                if (allTracks.length === 0) {
-                    console.log('[ERROR] No tracks found in the playlist.');
-                    return interaction.reply({ content: 'No tracks found in the playlist.' });
-                }
-
-                randomTrack = allTracks[Math.floor(Math.random() * allTracks.length)].track;
-                console.log(`[DEBUG] Random track selected: ${randomTrack.name} by ${randomTrack.artists[0].name}`);
-
-                while (randomTrack.name === lastTrack) {
-                    console.log('[DEBUG] Selected track is the same as the last one. Choosing a new one...');
-                    randomTrack = allTracks[Math.floor(Math.random() * allTracks.length)].track;
-                }
-            }
-
-            if (!randomTrack) {
-                console.log('[ERROR] Failed to select a track.');
-                return interaction.reply({ content: 'Failed to select a track.' });
-            }
-
-            const songDuration = randomTrack.duration_ms;
-            console.log(`[DEBUG] Setting activity to: ${randomTrack.name} by ${randomTrack.artists[0].name}`);
-            client.user.setActivity(`${randomTrack.name} by ${randomTrack.artists[0].name}`, {
-                type: 2,
-                url: randomTrack.external_urls.spotify
-            });
-
-            const channel = client.channels.cache.get('1319595096244752494');
-            if (channel) {
-                console.log(`[DEBUG] Now listening to: ${randomTrack.name}`);
-                // Defer the reply only once here, and set the flag
-                await interaction.deferReply(); // Defer the reply once
-                replied = true;  // Set the flag to true after deferring
-                await interaction.followUp({ content: `Now listening to: ${randomTrack.name} by ${randomTrack.artists[0].name}` });
-            }
-
-            if (currentTimeout) {
-                console.log('[DEBUG] Cancelling previous timeout due to new song request...');
-                clearTimeout(currentTimeout);
-            }
-
-            currentTimeout = setTimeout(async () => {
-                console.log('[DEBUG] Song has finished, switching to the next song...');
-                // Prevent recursion by ensuring no further replies or deferrals
-                if (!replied) {
-                    await this.execute(interaction, client);
-                }
-            }, songDuration);
-
+            console.log('[DEBUG] Command executed, switching song...');
+            await playRandomSong(interaction, client);
         } catch (error) {
             console.error('[ERROR] Error changing song:', error);
-            // Send a follow-up message after the deferred reply
             return interaction.followUp({ content: 'There was an error changing the song. Please try again later.' });
         }
     },
