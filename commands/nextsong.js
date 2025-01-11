@@ -106,7 +106,8 @@ module.exports = {
             const channel = client.channels.cache.get('1319595096244752494');
             if (channel) {
                 console.log(`[DEBUG] Now listening to: ${randomTrack.name}`);
-                await interaction.reply({ content: `Now listening to: ${randomTrack.name} by ${randomTrack.artists[0].name}` });
+                await interaction.deferReply(); // Defer the reply
+                await interaction.followUp({ content: `Now listening to: ${randomTrack.name} by ${randomTrack.artists[0].name}` });
             }
 
             if (currentTimeout) {
@@ -116,6 +117,7 @@ module.exports = {
 
             currentTimeout = setTimeout(async () => {
                 console.log('[DEBUG] Song has finished, switching to the next song...');
+                // No interaction.reply() here to avoid the error
                 await this.execute(interaction, client);
             }, songDuration);
 
