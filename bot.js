@@ -100,31 +100,6 @@ client.once('ready', async () => {
             });
 
             console.log(`[INFO] Bot is now listening to: ${randomTrack.name}`);
-
-            const trackImage = randomTrack.album.images[0].url;
-            const trackUrl = randomTrack.external_urls.spotify;
-
-            const channel = client.channels.cache.get('1319595096244752494');
-            if (channel) {
-                channel.send({
-                    embeds: [{
-                        title: randomTrack.name,
-                        description: `Now playing: ${randomTrack.name} by ${randomTrack.artists[0].name}`,
-                        url: trackUrl,
-                        image: { url: trackImage },
-                        footer: {
-                            text: 'Listen on Spotify',
-                            icon_url: 'https://i.scdn.co/image/ab6761610000e5eb62b311a0a9ecf97a2f80ddb8',
-                        },
-                    }]
-                }).then(() => {
-                    console.log(`[INFO] Embed sent successfully.`);
-                }).catch((err) => {
-                    console.error(`[ERROR] Error sending embed: ${err}`);
-                });
-            } else {
-                console.log(`[ERROR] Channel not found or bot lacks permissions to send messages.`);
-            }
         } else {
             console.log(`[ERROR] No track selected.`);
         }
