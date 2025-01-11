@@ -1,5 +1,24 @@
 const { SlashCommandBuilder } = require('discord.js');
-const { spotifyApi, client } = require('../bot');
+
+const spotifyApi = new SpotifyWebApi({
+    clientId: process.env.SPOTIFY_CLIENT_ID,
+    clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
+});
+
+let accessToken = '';
+
+async function authenticateSpotify() {
+    try {
+        const data = await spotifyApi.clientCredentialsGrant();
+        accessToken = data.body['access_token'];
+        spotifyApi.setAccessToken(accessToken);
+        console.log('Spotify access token acquired.');
+    } catch (err) {
+        console.error('Error getting Spotify access token:', err);
+    }
+}
+
+let lastTrack = null;
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -9,6 +28,7 @@ module.exports = {
     async execute(interaction) {
         try {
             const playlistId = '210tfDJT6HnJeGwyg01dBd';
+            await authenticateSpotify();
 
             let allTracks = [];
             let nextPage = null;
@@ -35,6 +55,10 @@ module.exports = {
             }
 
             let randomTrack = allTracks[Math.floor(Math.random() * allTracks.length)].track;
+
+            while (randomTrack.name === lastTrack) {
+                randomTrack = allTracks[Math.floor(Math.random() * allTracks.length)].track;
+            }
 
             if (!randomTrack) {
                 return interaction.reply({ content: 'Failed to select a random track.' });
