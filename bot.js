@@ -48,6 +48,8 @@ for (const file of commandFiles) {
     }
 }
 
+let lastTrack = null;
+
 client.once('ready', async () => {
     console.log(`[INFO] ${client.user.tag} has logged in.`);
     console.log(`[INFO] Loaded ${commandFiles.length} commands locally.`);
@@ -99,6 +101,8 @@ client.once('ready', async () => {
             });
 
             console.log(`[INFO] Bot is now listening to: ${randomTrack.name}`);
+
+            lastTrack = track.name;
 
             const trackImage = randomTrack.album.images[0].url;
             const trackUrl = randomTrack.external_urls.spotify;
