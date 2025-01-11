@@ -106,7 +106,8 @@ module.exports = {
             const channel = client.channels.cache.get('1319595096244752494');
             if (channel) {
                 console.log(`[DEBUG] Now listening to: ${randomTrack.name}`);
-                await interaction.deferReply(); // Defer the reply
+                // Defer the reply only once here
+                await interaction.deferReply(); // Defer the reply once
                 await interaction.followUp({ content: `Now listening to: ${randomTrack.name} by ${randomTrack.artists[0].name}` });
             }
 
@@ -123,7 +124,8 @@ module.exports = {
 
         } catch (error) {
             console.error('[ERROR] Error changing song:', error);
-            return interaction.reply({ content: 'There was an error changing the song. Please try again later.' });
+            // Send a follow-up message after the deferred reply
+            return interaction.followUp({ content: 'There was an error changing the song. Please try again later.' });
         }
     },
 };
