@@ -54,34 +54,42 @@ client.once('ready', async () => {
 
     await authenticateSpotify();
 
-    const trackName = 'Osmosis';
+    const playlistId = '210tfDJT6HnJeGwyg01dBd';
+
     try {
-        console.log(`[DEBUG] Searching for track: ${trackName}`);
-        const trackData = await spotifyApi.searchTracks(trackName, { limit: 1 });
-        console.log(`[DEBUG] Track data received:`, trackData.body);
+        console.log(`[DEBUG] Fetching tracks from playlist ID: ${playlistId}`);
+        const playlistData = await spotifyApi.getPlaylistTracks(playlistId, { limit: 128 });
 
-        const track = trackData.body.tracks.items[0];
+        console.log(`[DEBUG] Playlist data received:`, playlistData.body);
 
-        if (track) {
-            console.log(`[DEBUG] Track found: ${track.name} by ${track.artists[0].name}`);
+        const tracks = playlistData.body.items;
+        if (tracks.length === 0) {
+            console.log(`[ERROR] No tracks found in the playlist.`);
+            return;
+        }
 
-            console.log(`[DEBUG] Setting activity with URL: ${track.external_urls.spotify}`);
-            client.user.setActivity(`${track.name} by ${track.artists[0].name}`, {
+        const randomTrack = tracks[Math.floor(Math.random() * tracks.length)].track;
+
+        if (randomTrack) {
+            console.log(`[DEBUG] Random track selected: ${randomTrack.name} by ${randomTrack.artists[0].name}`);
+
+            console.log(`[DEBUG] Setting activity with URL: ${randomTrack.external_urls.spotify}`);
+            client.user.setActivity(`${randomTrack.name} by ${randomTrack.artists[0].name}`, {
                 type: 2,
-                url: track.external_urls.spotify
+                url: randomTrack.external_urls.spotify
             });
 
-            console.log(`[INFO] Bot is now listening to: ${track.name}`);
+            console.log(`[INFO] Bot is now listening to: ${randomTrack.name}`);
 
-            const trackImage = track.album.images[0].url;
-            const trackUrl = track.external_urls.spotify;
+            const trackImage = randomTrack.album.images[0].url;
+            const trackUrl = randomTrack.external_urls.spotify;
 
             const channel = client.channels.cache.get('1319595096244752494');
             if (channel) {
                 channel.send({
                     embeds: [{
-                        title: track.name,
-                        description: `Now playing: ${track.name} by ${track.artists[0].name}`,
+                        title: randomTrack.name,
+                        description: `Now playing: ${randomTrack.name} by ${randomTrack.artists[0].name}`,
                         url: trackUrl,
                         image: { url: trackImage },
                         footer: {
@@ -98,10 +106,10 @@ client.once('ready', async () => {
                 console.log(`[ERROR] Channel not found or bot lacks permissions to send messages.`);
             }
         } else {
-            console.log(`[ERROR] Song not found.`);
+            console.log(`[ERROR] No track selected.`);
         }
     } catch (err) {
-        console.error(`[ERROR] Error searching for the track: ${err}`);
+        console.error(`[ERROR] Error fetching playlist tracks: ${err}`);
     }
 });
 
