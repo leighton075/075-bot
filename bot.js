@@ -72,7 +72,6 @@ client.once('ready', async () => {
                 offset: nextPage ? allTracks.length : 0
             });
 
-            console.log(`[DEBUG] Playlist data received:`, playlistData.body);
             const tracks = playlistData.body.items;
 
             if (tracks.length === 0) {
