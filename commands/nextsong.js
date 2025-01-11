@@ -30,7 +30,7 @@ module.exports = {
                 .setName('playlist')
                 .setDescription('Which playlist to listen to')
                 .addStringOption(option =>
-                    option.setName('playlistId')
+                    option.setName('playlistid')
                         .setDescription('Id of the playlist to listen to')
                         .setRequired(false)
                         .setAutocomplete(true)))
@@ -65,7 +65,7 @@ module.exports = {
 
     async execute(interaction, client) {
         try {
-            const playlistId = interaction.options.getString('playlistId');
+            const playlistId = interaction.options.getString('playlistid');
             await authenticateSpotify();
 
             let allTracks = [];
