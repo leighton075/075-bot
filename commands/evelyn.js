@@ -9,6 +9,8 @@ module.exports = {
 
     async execute(interaction) {
         try {
+            await interaction.deferReply();
+            
             const folderPath = path.join(__dirname, '../evelyn');
             const files = fs.readdirSync(folderPath);
             const validFiles = files.filter(file => file.endsWith('.mp4'));
