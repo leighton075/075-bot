@@ -18,8 +18,8 @@ Bot is designed for use on a small private server because I don't like Maki. It'
 ## Todo
 
 - Fix inventory value api response error
-- Add ability to stalk by email
-- Add embeds to username stalk and anything else that needs to look pretty
+- Add user authentication via Azure so I can learn how to use it
+- Add embeds to anything that needs to look pretty
 
 ## Disclaimer
 
