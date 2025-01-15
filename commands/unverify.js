@@ -36,26 +36,19 @@ module.exports = {
                 }
 
                 if (result.length > 0) {
-                    const user = result[0];
+                    console.log(`[DEBUG] Found user in the database: ${userId}, ${result[0].username}`);
 
-                    console.log(`[DEBUG] Found user in the database: ${userId}, ${user.username}`);
+                    const deleteQuery = 'DELETE FROM verification WHERE user_id = ?';
+                    db.query(deleteQuery, [userId], (deleteErr) => {
+                        if (deleteErr) {
+                            console.error(`[ERROR] Error removing user from the database: ${deleteErr}`);
+                            return interaction.reply('There was an error removing your account from the database.');
+                        }
 
-                    if (user.verified === 1) {
-                        const deleteQuery = 'DELETE FROM verification WHERE user_id = ?';
-                        db.query(deleteQuery, [userId], (deleteErr) => {
-                            if (deleteErr) {
-                                console.error(`[ERROR] Error removing user from the database: ${deleteErr}`);
-                                return interaction.reply('There was an error removing your account from the database.');
-                            }
+                        console.log(`[DEBUG] User removed from database: ${userId}, ${result[0].username}`);
 
-                            console.log(`[DEBUG] User removed from database: ${userId}, ${user.username}`);
-
-                            interaction.reply('Your account has been successfully unverified and removed from the verification database.');
-                        });
-                    } else {
-                        console.log(`[DEBUG] User is already unverified: ${userId}, ${user.username}`);
-                        return interaction.reply('You are already unverified.');
-                    }
+                        interaction.reply('Your account has been successfully unverified and removed from the verification database.');
+                    });
                 } else {
                     console.log(`[DEBUG] User not found in database: ${userId}`);
                     return interaction.reply('You need to verify your account first. Please verify your account using `/verify`.');
