@@ -6,8 +6,28 @@ const spotifyApi = new SpotifyWebApi({
     clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
 });
 
+module.exports = {
+    data: new SlashCommandBuilder()
+        .setName('nextsong')
+        .setDescription('Change the song the bot is listening to.')
+        .addStringOption(option =>
+            option
+                .setName('song')
+                .setDescription('Play a specific song')
+                .setRequired(false)),
+
+    async execute(interaction, client) {
+        try {
+            console.log('[DEBUG] Command executed, switching song...');
+            await playRandomSong(interaction, client);
+        } catch (error) {
+            console.error('[ERROR] Error changing song:', error);
+            return interaction.followUp({ content: 'There was an error changing the song. Please try again later.' });
+        }
+    },
+};
+
 let accessToken = '';
-let currentInterval = null;  // Interval to switch songs every 2 minutes
 
 async function authenticateSpotify() {
     try {
@@ -29,7 +49,6 @@ async function playRandomSong(interaction, client) {
 
     let randomTrack = null;
 
-    // Check if the user provided a custom song
     if (interaction.options.getString('song')) {
         console.log('[DEBUG] Song argument provided, searching for the song...');
         const songQuery = interaction.options.getString('song');
@@ -85,7 +104,6 @@ async function playRandomSong(interaction, client) {
         return interaction.reply({ content: 'Failed to select a track.' });
     }
 
-    const songDuration = randomTrack.duration_ms;
     console.log(`[DEBUG] Setting activity to: ${randomTrack.name} by ${randomTrack.artists[0].name}`);
     client.user.setActivity(`${randomTrack.name} by ${randomTrack.artists[0].name}`, {
         type: 2,
@@ -100,37 +118,4 @@ async function playRandomSong(interaction, client) {
     }
 
     lastTrack = randomTrack.name;
-
-    // Clear the previous interval if any
-    if (currentInterval) {
-        clearInterval(currentInterval);
-    }
-
-    // Set the interval to switch to the next song every 2 minutes (120,000 ms)
-    currentInterval = setInterval(async () => {
-        console.log('[DEBUG] Switching to the next song...');
-        await playRandomSong(interaction, client);  // Call to play a random song
-    }, 120000);  // 2 minutes
-
 }
-
-module.exports = {
-    data: new SlashCommandBuilder()
-        .setName('nextsong')
-        .setDescription('Change the song the bot is listening to.')
-        .addStringOption(option =>
-            option
-                .setName('song')
-                .setDescription('Play a specific song')
-                .setRequired(false)),
-
-    async execute(interaction, client) {
-        try {
-            console.log('[DEBUG] Command executed, switching song...');
-            await playRandomSong(interaction, client);
-        } catch (error) {
-            console.error('[ERROR] Error changing song:', error);
-            return interaction.followUp({ content: 'There was an error changing the song. Please try again later.' });
-        }
-    },
-};
