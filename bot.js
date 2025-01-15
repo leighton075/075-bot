@@ -37,8 +37,6 @@ async function authenticateSpotify() {
     }
 }
 
-module.exports = client;
-
 // ==========================
 // mySQL Setup
 // ==========================
@@ -56,8 +54,6 @@ db.connect((err) => {
         console.log(`[INFO] Connected to the mySQL database.`);
     }
 });
-
-module.exports = { client, db };
 
 // ==========================
 // Register Commands

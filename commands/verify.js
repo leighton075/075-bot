@@ -1,5 +1,19 @@
 const { SlashCommandBuilder } = require('discord.js');
-const { db } = require('../bot'); // Importing the db connection from bot.js
+
+const db = mysql.createConnection({
+    host: 'localhost',
+    user: process.env.SQL_USERNAME,
+    password: process.env.SQL_PASSWORD,
+    database: 'bot_verification'
+});
+
+db.connect((err) => {
+    if (err) {
+        console.error(`[ERROR] Error connecting to the database: ${err}`);
+    } else {
+        console.log(`[INFO] Connected to the mySQL database.`);
+    }
+});
 
 module.exports = {
     data: new SlashCommandBuilder()
