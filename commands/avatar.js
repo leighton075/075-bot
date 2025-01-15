@@ -5,7 +5,8 @@ module.exports = {
         .setName('avatar')
         .setDescription('Gets a user\'s avatar')
         .addUserOption(option =>
-            option.setName('user')
+            option
+                .setName('user')
                 .setDescription('User whose avatar to get')
                 .setRequired(false)),
 

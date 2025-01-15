@@ -11,7 +11,8 @@ module.exports = {
         .setName('songs')
         .setDescription('Display top songs for 1, 6, or 12 months')
         .addIntegerOption(option =>
-            option.setName('months')
+            option
+                .setName('months')
                 .setDescription('Time range in months')
                 .setRequired(true)),
 

@@ -10,7 +10,8 @@ module.exports = {
                 .setDescription('The user that will get the role')
                 .setRequired(true))
         .addRoleOption(option =>
-            option.setName('role')
+            option
+                .setName('role')
                 .setDescription('The role the user will get')
                 .setRequired(true)),
 

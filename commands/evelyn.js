@@ -28,9 +28,7 @@ module.exports = {
 
         } catch (error) {
             console.error('Error getting a video of Evelyn:', error);
-            return interaction.editReply({
-                content: 'There was an error getting a video of Evelyn. Please try again later.',
-            });
+            return interaction.editReply({ content: 'There was an error getting a video of Evelyn. Please try again later.' });
         }
     },
 };

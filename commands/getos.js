@@ -13,19 +13,14 @@ module.exports = {
 
     async execute(interaction) {
         const target = interaction.options.getString('target');
-        await interaction.reply({
-            content: 'Scanning... Please wait.',
-            ephemeral: true
-        });
+        await interaction.reply({ content: 'Scanning... Please wait.', ephemeral: true });
 
         exec(`python3 osscan.py ${target}`, (error, stdout, stderr) => {
             if (error) {
-                console.error(`[ERROR] Python script execution error: ${error}`);
-                return interaction.followUp(`Sorry, there was an error executing the scan.`);
+                return interaction.followUp(`Sorry, there was an error executing the script. ${error}`);
             }
 
             if (stderr) {
-                console.error(`[ERROR] Python script stderr: ${stderr}`);
                 return interaction.followUp(`Error: ${stderr}`);
             }
 

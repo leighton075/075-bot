@@ -8,7 +8,7 @@ const spotifyApi = new SpotifyWebApi({
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('nextsong')
+        .setName('botsong')
         .setDescription('Change the song the bot is listening to.')
         .addStringOption(option =>
             option
@@ -18,10 +18,8 @@ module.exports = {
 
     async execute(interaction, client) {
         try {
-            console.log('[DEBUG] Command executed, switching song...');
             await playRandomSong(interaction, client);
         } catch (error) {
-            console.error('[ERROR] Error changing song:', error);
             return interaction.followUp({ content: 'There was an error changing the song. Please try again later.' });
         }
     },
@@ -31,11 +29,9 @@ let accessToken = '';
 
 async function authenticateSpotify() {
     try {
-        console.log('[DEBUG] Attempting to authenticate with Spotify...');
         const data = await spotifyApi.clientCredentialsGrant();
         accessToken = data.body['access_token'];
         spotifyApi.setAccessToken(accessToken);
-        console.log('[DEBUG] Spotify access token acquired.');
     } catch (err) {
         console.error('[ERROR] Error getting Spotify access token:', err);
     }
@@ -50,24 +46,19 @@ async function playRandomSong(interaction, client) {
     let randomTrack = null;
 
     if (interaction.options.getString('song')) {
-        console.log('[DEBUG] Song argument provided, searching for the song...');
         const songQuery = interaction.options.getString('song');
         const searchResult = await spotifyApi.searchTracks(songQuery, { limit: 1 });
 
         if (searchResult.body.tracks.items.length === 0) {
-            console.log('[ERROR] No song found with that name.');
             return interaction.reply({ content: 'No song found with that name.' });
         }
 
         randomTrack = searchResult.body.tracks.items[0];
-        console.log(`[DEBUG] Found song: ${randomTrack.name} by ${randomTrack.artists[0].name}`);
     } else {
-        console.log('[DEBUG] No song argument provided, fetching a random track from the playlist...');
         let allTracks = [];
         let nextPage = null;
 
         do {
-            console.log('[DEBUG] Fetching playlist tracks...');
             const playlistData = await spotifyApi.getPlaylistTracks(playlistId, {
                 limit: 100,
                 offset: nextPage ? allTracks.length : 0,
@@ -76,7 +67,6 @@ async function playRandomSong(interaction, client) {
             const tracks = playlistData.body.items;
 
             if (tracks.length === 0) {
-                console.log('[ERROR] No tracks found in the playlist.');
                 return interaction.reply({ content: 'No tracks found in the playlist.' });
             }
 
@@ -86,21 +76,17 @@ async function playRandomSong(interaction, client) {
         } while (nextPage);
 
         if (allTracks.length === 0) {
-            console.log('[ERROR] No tracks found in the playlist.');
             return interaction.reply({ content: 'No tracks found in the playlist.' });
         }
 
         randomTrack = allTracks[Math.floor(Math.random() * allTracks.length)].track;
-        console.log(`[DEBUG] Random track selected: ${randomTrack.name} by ${randomTrack.artists[0].name}`);
 
         while (randomTrack.name === lastTrack) {
-            console.log('[DEBUG] Selected track is the same as the last one. Choosing a new one...');
             randomTrack = allTracks[Math.floor(Math.random() * allTracks.length)].track;
         }
     }
 
     if (!randomTrack) {
-        console.log('[ERROR] Failed to select a track.');
         return interaction.reply({ content: 'Failed to select a track.' });
     }
 
@@ -112,7 +98,6 @@ async function playRandomSong(interaction, client) {
 
     const channel = client.channels.cache.get('1319595096244752494');
     if (channel) {
-        console.log(`[DEBUG] Now listening to: ${randomTrack.name}`);
         await interaction.deferReply();
         await interaction.followUp({ content: `Now listening to: ${randomTrack.name} by ${randomTrack.artists[0].name}` });
     }

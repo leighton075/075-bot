@@ -13,7 +13,8 @@ module.exports = {
                 .setName('normal')
                 .setDescription('Just a regular search')
                 .addStringOption(option =>
-                    option.setName('username')
+                    option
+                        .setName('username')
                         .setDescription('Username to search for')
                         .setRequired(true)))
         .addSubcommand(subcommand =>

@@ -45,10 +45,7 @@ module.exports = {
                 return interaction.reply({ content: 'Good try oliver, tell me to fix this if you see this message' });
             }
 
-            await interaction.reply({
-                content: `Are you sure you want to kick ${user.tag} for reason: ${reason}?`,
-                components: [row],
-            });
+            await interaction.reply({ content: `Are you sure you want to kick ${user.tag} for reason: ${reason}?`, components: [row] });
 
             const filter = i => i.user.id === interaction.user.id;
             const collector = interaction.channel.createMessageComponentCollector({
@@ -70,7 +67,7 @@ module.exports = {
                         await i.update({embeds: [embed], components: []});
                         collector.stop();
                     } catch (error) {
-                        console.error('Error kicking user:', error);
+                        interaction.reply(`There was an error ${error}`);
                         await i.update({ content: `There was an error kicking ${user.tag}`, components: [] });
                     }
                 } else if (i.customId === 'cancel') {
@@ -85,8 +82,7 @@ module.exports = {
             });
 
         } catch (error) {
-            console.error('Error during kick process:', error);
-            return interaction.reply({ content: `There was an error with the kick process.`, ephemeral: true });
+            return interaction.reply({ content: `There was an error with the kick process: ${error}`, ephemeral: true });
         }
     },
 };

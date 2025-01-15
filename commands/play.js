@@ -13,7 +13,6 @@ module.exports = {
             .setRequired(true)
             .addChoices(
                 { name: 'bruh', value: 'bruh' },
-                { name: 'N in my dick hole', value: 'n_in_my_dick_hole' },
             )),
 
     async execute(interaction) {
@@ -22,7 +21,7 @@ module.exports = {
         let hasReplied = false;
 
         if (!voiceChannel) {
-            return interaction.reply({ content: 'You need to join a voice channel first!', ephemeral: true }); // Ephemeral response
+            return interaction.reply({ content: 'You need to join a voice channel first!', ephemeral: true });
         }
 
         try {
@@ -36,11 +35,9 @@ module.exports = {
 
             const filePath = path.resolve(__dirname, '../sounds', `${sound}.mp3`);
 
-            console.log(`Attempting to play sound from: ${filePath}`);
-
             if (!fs.existsSync(filePath)) {
                 console.error('File not found:', filePath);
-                return interaction.followUp({ content: 'Sound file not found.', ephemeral: true }); // Ephemeral response
+                return interaction.followUp({ content: 'Sound file not found.', ephemeral: true });
             }
 
             const resource = createAudioResource(fs.createReadStream(filePath));
@@ -51,25 +48,21 @@ module.exports = {
 
             player.on(AudioPlayerStatus.Playing, () => {
                 if (!hasReplied) {
-                    console.log('Audio is now playing.');
-                    interaction.followUp({ content: `Now playing: ${sound}`, ephemeral: true }); // Ephemeral response
+                    interaction.followUp({ content: `Now playing: ${sound}`, ephemeral: true });
                     hasReplied = true;
                 }
             });
 
             player.on(AudioPlayerStatus.Idle, () => {
-                console.log('Audio finished, leaving the channel.');
                 connection.destroy();
             });
 
             connection.on(VoiceConnectionStatus.Disconnected, () => {
-                console.log('Disconnected from the voice channel.');
                 connection.destroy();
             });
 
         } catch (error) {
-            console.error('Error occurred during audio playback:', error);
-            return interaction.followUp({ content: 'There was an error playing the sound.', ephemeral: true }); // Ephemeral response
+            return interaction.followUp({ content: `There was an error playing the sound:v${error}`, ephemeral: true });
         }
     },
 };

@@ -12,7 +12,8 @@ module.exports = {
                 .setName('video')
                 .setDescription('Get information for a video')
                 .addStringOption(option =>
-                    option.setName('url')
+                    option
+                        .setName('url')
                         .setDescription('YouTube video URL')
                         .setRequired(true)))
         .addSubcommand(subcommand =>
@@ -20,7 +21,8 @@ module.exports = {
                 .setName('channel')
                 .setDescription('Get information for a channel')
                 .addStringOption(option =>
-                    option.setName('url')
+                    option
+                        .setName('url')
                         .setDescription('YouTube channel URL')
                         .setRequired(true))),
         

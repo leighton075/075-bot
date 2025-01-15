@@ -9,11 +9,13 @@ module.exports = {
                 .setName('add')
                 .setDescription('Assign a role to a user')
                 .addUserOption(option =>
-                    option.setName('user')
+                    option
+                        .setName('user')
                         .setDescription('The user to assign the role')
                         .setRequired(true))
                 .addRoleOption(option =>
-                    option.setName('role')
+                    option
+                        .setName('role')
                         .setDescription('The role to assign')
                         .setRequired(true)))
         .addSubcommand(subcommand =>
@@ -92,8 +94,7 @@ module.exports = {
                 await member.roles.remove(role);
                 return interaction.reply({ content: `Removed the ${role.name} role from ${member.user.tag}` });
             } catch (error) {
-                console.error('Error removing role:', error);
-                return interaction.reply({ content: 'There was an error removing the role.', ephemeral: true });
+                return interaction.reply({ content: `There was an error removing the role: ${error}`, ephemeral: true });
             }
         }
     },

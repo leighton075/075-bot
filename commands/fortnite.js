@@ -14,7 +14,8 @@ module.exports = {
                 .setName('stats')
                 .setDescription('Get the stats for a player')
                 .addStringOption(option =>
-                    option.setName('player')
+                    option
+                        .setName('player')
                         .setDescription('Fortnite username')
                         .setRequired(true))),
 
@@ -56,7 +57,6 @@ module.exports = {
 
                 await interaction.reply({ embeds: [embed] });
             } catch (error) {
-                console.error('Error fetching Fortnite status or maintenance:', error.message);
                 await interaction.reply({ content: `Failed to fetch Fortnite status or maintenance info: ${error.message}` });
             }
         }
@@ -74,8 +74,6 @@ module.exports = {
                         Authorization: process.env.FORTNITE_API_KEY,
                     },
                 });
-
-                console.log('Response from Fortnite API:', response.data);
 
                 const statsData = response.data;
 

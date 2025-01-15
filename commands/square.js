@@ -5,7 +5,8 @@ module.exports = {
         .setName('square')
         .setDescription('Returns the square of a number.')
         .addIntegerOption(option =>
-            option.setName('number')
+            option
+                .setName('number')
                 .setDescription('The number to square')
                 .setRequired(true)),
     async execute(interaction) {

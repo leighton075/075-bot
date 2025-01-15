@@ -5,7 +5,8 @@ module.exports = {
         .setName('nuke')
         .setDescription('Deletes messages')
         .addIntegerOption(option =>
-            option.setName('messages')
+            option
+                .setName('messages')
                 .setDescription('Amount of messages to delete')
                 .setRequired(true)),
 
@@ -27,8 +28,7 @@ module.exports = {
             const replyMessage = await interaction.reply(`Successfully deleted ${deleteCount} messages!`);
             setTimeout(() => replyMessage.delete(), 10000); // Delete the reply message after 10 seconds
         } catch (error) {
-            console.error('Error deleting messages:', error);
-            return interaction.reply('There was an error trying to delete messages in this channel!');
+            return interaction.reply('There was an error trying to delete messages in this channel!', error);
         }
     },
 };

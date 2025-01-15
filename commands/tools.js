@@ -17,15 +17,18 @@ module.exports = {
                 .setName('screenshot')
                 .setDescription('Takes a screenshot of a website')
                 .addStringOption(option =>
-                    option.setName('url')
+                    option
+                        .setName('url')
                         .setDescription('Url of a website to screenshot')
                         .setRequired(true))
                 .addIntegerOption(option =>
-                    option.setName('width')
+                    option
+                        .setName('width')
                         .setDescription('Width of the image (max 1920)')
                         .setRequired(false))
                 .addIntegerOption(option =>
-                    option.setName('height')
+                    option
+                        .setName('height')
                         .setDescription('Height of the image (max 3840)')
                         .setRequired(false)))
         .addSubcommand(subcommand =>
@@ -33,7 +36,8 @@ module.exports = {
                 .setName('download')
                 .setDescription('Download media from a url')
                 .addStringOption(option =>
-                    option.setName('url')
+                    option
+                        .setName('url')
                         .setDescription('Url to download media from')
                         .setRequired(true)))
         .addSubcommand(subcommand => 
@@ -41,7 +45,8 @@ module.exports = {
                 .setName('extract')
                 .setDescription('Extract audio from a url')
                 .addStringOption(option => 
-                    option.setName('url')
+                    option
+                        .setName('url')
                         .setDescription('Url of video to extract audio from')
                         .setRequired(true))),
         
