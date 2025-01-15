@@ -2,6 +2,7 @@ const { Client, GatewayIntentBits, Collection, AuditLogEvent, EmbedBuilder, Even
 const { clientId, guildId, token } = require('./config.json');
 const SpotifyWebApi = require('spotify-web-api-node');
 const fs = require('node:fs');
+const mysql = require('mysql2');
 require('dotenv').config();
 
 const client = new Client({
@@ -14,6 +15,10 @@ const client = new Client({
     ],
 });
 
+
+// ==========================
+// Spotify Login & Auth
+// ==========================
 const spotifyApi = new SpotifyWebApi({
     clientId: process.env.SPOTIFY_CLIENT_ID,
     clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
@@ -34,6 +39,29 @@ async function authenticateSpotify() {
 
 module.exports = client;
 
+// ==========================
+// mySQL Setup
+// ==========================
+const db = mysql.createConnection({
+    host: 'localhost',
+    user: process.env.SQL_USERNAME,
+    password: process.env.SQL_PASSWORD,
+    database: 'bot_verification'
+});
+
+db.connect((err) => {
+    if (err) {
+        console.error(`[ERROR] Error connecting to the database: ${err}`);
+    } else {
+        console.log(`[INFO] Connected to the mySQL database.`);
+    }
+});
+
+module.exports = { client, db };
+
+// ==========================
+// Register Commands
+// ==========================
 const commands = new Collection();
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
 
@@ -50,6 +78,9 @@ for (const file of commandFiles) {
     }
 }
 
+// ==========================
+// Execute On Login
+// ==========================
 client.once('ready', async () => {
     console.log(`[INFO] ${client.user.tag} has logged in.`);
     console.log(`[INFO] Loaded ${commandFiles.length} commands locally.`);
@@ -108,6 +139,9 @@ client.once('ready', async () => {
     }
 });
 
+// ==========================
+// Command Used
+// ==========================
 client.on(Events.InteractionCreate, async (interaction) => {
     if (!interaction.isChatInputCommand()) return;
     const command = commands.get(interaction.commandName);
@@ -123,6 +157,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
 });
 
+// ==========================
+// Message Sent
+// ==========================
 client.on(Events.MessageCreate, async (message) => {
     const linkChannel = '1319595051160047627';
     if (message.author.bot) return;
@@ -137,6 +174,9 @@ client.on(Events.MessageCreate, async (message) => {
     }
 });
 
+// ==========================
+// When User Joins Server
+// ==========================
 client.on(Events.GuildMemberAdd, async (member) => {
     console.log(`${member.user.tag} has joined the server!`);
 
@@ -165,6 +205,9 @@ client.on(Events.GuildMemberAdd, async (member) => {
     }
 });
 
+// ==========================
+// When User Leaves/Kicked/Banned
+// ==========================
 client.on(Events.GuildMemberRemove, async (member) => {
     console.log(`${member.user.tag} has left the server!`);
 
