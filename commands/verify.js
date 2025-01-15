@@ -19,10 +19,11 @@ db.connect((err) => {
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('verify')
-        .setDescription('Verify your account by adding your user ID to the database'),
+        .setDescription('Verify your account by adding your user ID and username to the database'),
 
     async execute(interaction) {
         const userId = interaction.user.id;
+        const username = interaction.user.username;
 
         const imTheBiggestBird = '1087890340792512603';  
         if (interaction.user.id !== imTheBiggestBird) {
@@ -37,15 +38,28 @@ module.exports = {
             }
 
             if (result.length > 0) {
-                interaction.reply('You are already verified or in the database.');
+                const existingUsername = result[0].username;
+
+                if (existingUsername !== username) {
+                    const updateQuery = 'UPDATE verification SET username = ? WHERE user_id = ?';
+                    db.query(updateQuery, [username, userId], (updateErr) => {
+                        if (updateErr) {
+                            console.error(`[ERROR] Error updating username: ${updateErr}`);
+                            return interaction.reply('There was an error updating your username.');
+                        }
+                        interaction.reply('Your username has been updated in the database.');
+                    });
+                } else {
+                    interaction.reply('Your user ID and username are already in the database.');
+                }
             } else {
-                const insertQuery = 'INSERT INTO verification (user_id) VALUES (?)';
-                db.query(insertQuery, [userId, 0], (insertErr) => {
+                const insertQuery = 'INSERT INTO verification (user_id, username) VALUES (?, ?)';
+                db.query(insertQuery, [userId, username], (insertErr) => {
                     if (insertErr) {
                         console.error(`[ERROR] Error adding user to the database: ${insertErr}`);
                         return interaction.reply('There was an error adding your account to the database.');
                     }
-                    interaction.reply('Your user ID has been added to the verification database.');
+                    interaction.reply('Your user ID and username have been added to the verification database.');
                 });
             }
         });
