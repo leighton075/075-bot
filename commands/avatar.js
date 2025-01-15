@@ -41,29 +41,23 @@ module.exports = {
                 }
 
                 if (result.length > 0) {
-                    const user = result[0];
+                    const targetUser = interaction.options.getUser('user') || interaction.user;
+                    const avatarURL = targetUser.displayAvatarURL({ size: 1024, dynamic: true });
 
-                    if (user.verified === 1) {
-                        const targetUser = interaction.options.getUser('user') || interaction.user;
-                        const avatarURL = targetUser.displayAvatarURL({ size: 1024, dynamic: true });
+                    const embed = new EmbedBuilder()
+                        .setColor('#cb668b')
+                        .setTitle(`${targetUser.username}'s avatar:`)
+                        .setImage(avatarURL)
+                        .setFooter({ text: `Requested by ${interaction.user.username}`, iconURL: interaction.user.displayAvatarURL() });
 
-                        const embed = new EmbedBuilder()
-                            .setColor('#cb668b')
-                            .setTitle(`${targetUser.username}'s avatar:`)
-                            .setImage(avatarURL)
-                            .setFooter({ text: `Requested by ${interaction.user.username}`, iconURL: interaction.user.displayAvatarURL() });
+                    const button = new ButtonBuilder()
+                        .setLabel('Open in Browser')
+                        .setStyle(ButtonStyle.Link)
+                        .setURL(avatarURL);
 
-                        const button = new ButtonBuilder()
-                            .setLabel('Open in Browser')
-                            .setStyle(ButtonStyle.Link)
-                            .setURL(avatarURL);
+                    const row = new ActionRowBuilder().addComponents(button);
 
-                        const row = new ActionRowBuilder().addComponents(button);
-
-                        return interaction.reply({ embeds: [embed], components: [row] });
-                    } else {
-                        return interaction.reply('You need to be verified to access this command. Please verify your account using `/verify`.');
-                    }
+                    return interaction.reply({ embeds: [embed], components: [row] });
                 } else {
                     return interaction.reply('You need to verify your account first. Please verify your account using `/verify`.');
                 }
