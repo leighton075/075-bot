@@ -1,6 +1,9 @@
 const { SlashCommandBuilder } = require('discord.js');
 const mysql = require('mysql2');
 
+// ==========================
+//        mySQL Setup
+// ==========================
 const db = mysql.createConnection({
     host: 'localhost',
     user: process.env.SQL_USERNAME,
@@ -24,11 +27,6 @@ module.exports = {
     async execute(interaction) {
         const userId = interaction.user.id;
         const username = interaction.user.username;
-
-        const imTheBiggestBird = '1087890340792512603';  
-        if (interaction.user.id !== imTheBiggestBird) {
-            return interaction.reply("You are not the biggest bird");
-        }
 
         const checkQuery = 'SELECT * FROM verification WHERE user_id = ?';
         db.query(checkQuery, [userId], (err, result) => {

@@ -7,6 +7,25 @@ const { createWriteStream } = require('fs');
 const { URL } = require('url');
 const sharp = require('sharp');
 const ffmpeg = require('fluent-ffmpeg');
+const mysql = require('mysql2');
+
+// ==========================
+//        mySQL Setup
+// ==========================
+const db = mysql.createConnection({
+    host: 'localhost',
+    user: process.env.SQL_USERNAME,
+    password: process.env.SQL_PASSWORD,
+    database: 'bot_verification'
+});
+
+db.connect((err) => {
+    if (err) {
+        console.error(`[ERROR] Error connecting to the database: ${err}`);
+    } else {
+        console.log(`[INFO] Connected to the mySQL database.`);
+    }
+});
 
 module.exports = {
     data: new SlashCommandBuilder()

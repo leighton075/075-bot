@@ -1,8 +1,27 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { ApifyClient } = require('apify-client');
 const { fetch } = require('undici');
+const mysql = require('mysql2');
 
 const client = new ApifyClient({ token: process.env.APIFY_API_KEY });
+
+// ==========================
+//        mySQL Setup
+// ==========================
+const db = mysql.createConnection({
+    host: 'localhost',
+    user: process.env.SQL_USERNAME,
+    password: process.env.SQL_PASSWORD,
+    database: 'bot_verification'
+});
+
+db.connect((err) => {
+    if (err) {
+        console.error(`[ERROR] Error connecting to the database: ${err}`);
+    } else {
+        console.log(`[INFO] Connected to the mySQL database.`);
+    }
+});
 
 module.exports = {
     data: new SlashCommandBuilder()

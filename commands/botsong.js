@@ -1,9 +1,31 @@
 const { SlashCommandBuilder } = require('discord.js');
 const SpotifyWebApi = require('spotify-web-api-node');
+const mysql = require('mysql2');
 
+// ==========================
+//    Spotify Setup & Auth
+// ==========================
 const spotifyApi = new SpotifyWebApi({
     clientId: process.env.SPOTIFY_CLIENT_ID,
     clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
+});
+
+// ==========================
+//        mySQL Setup
+// ==========================
+const db = mysql.createConnection({
+    host: 'localhost',
+    user: process.env.SQL_USERNAME,
+    password: process.env.SQL_PASSWORD,
+    database: 'bot_verification'
+});
+
+db.connect((err) => {
+    if (err) {
+        console.error(`[ERROR] Error connecting to the database: ${err}`);
+    } else {
+        console.log(`[INFO] Connected to the mySQL database.`);
+    }
 });
 
 module.exports = {
