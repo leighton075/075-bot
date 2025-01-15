@@ -39,7 +39,7 @@ module.exports = {
             if (result.length > 0) {
                 interaction.reply('You are already verified or in the database.');
             } else {
-                const insertQuery = 'INSERT INTO verification (user_id, verified) VALUES (?, ?)';
+                const insertQuery = 'INSERT INTO verification (user_id) VALUES (?)';
                 db.query(insertQuery, [userId, 0], (insertErr) => {
                     if (insertErr) {
                         console.error(`[ERROR] Error adding user to the database: ${insertErr}`);
