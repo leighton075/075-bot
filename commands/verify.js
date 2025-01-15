@@ -45,7 +45,7 @@ module.exports = {
                         console.error(`[ERROR] Error adding user to the database: ${insertErr}`);
                         return interaction.reply('There was an error adding your account to the database.');
                     }
-                    interaction.reply('Your user ID has been added to the verification database. You are now unverified, please get verified.');
+                    interaction.reply('Your user ID has been added to the verification database.');
                 });
             }
         });
