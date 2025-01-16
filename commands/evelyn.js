@@ -30,7 +30,6 @@ module.exports = {
         try {
             const userId = interaction.user.id;
 
-            // Verify user in database
             const checkQuery = 'SELECT * FROM verification WHERE user_id = ?';
             db.query(checkQuery, [userId], async (err, result) => {
                 if (err) {
@@ -39,10 +38,8 @@ module.exports = {
                 }
 
                 if (result.length > 0) {
-                    // User is verified, proceed to get a random Evelyn edit
                     await getRandomEvelynEdit(interaction);
                 } else {
-                    // User is not verified
                     return interaction.reply('You need to verify your account first. Please verify your account using `/verify`.');
                 }
             });

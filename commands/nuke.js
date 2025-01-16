@@ -45,7 +45,7 @@ module.exports = {
             const messages = await interaction.channel.messages.fetch({ limit: deleteCount});
             await interaction.channel.bulkDelete(messages, true);
             const replyMessage = await interaction.reply(`Successfully deleted ${deleteCount} messages!`);
-            setTimeout(() => replyMessage.delete(), 10000); // Delete the reply message after 10 seconds
+            setTimeout(() => replyMessage.delete(), 10000);
         } catch (error) {
             return interaction.reply('There was an error trying to delete messages in this channel!', error);
         }

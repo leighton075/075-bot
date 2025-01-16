@@ -25,10 +25,20 @@ module.exports = {
         .setDescription('Invite the bot'),
 
     async execute(interaction) {
-        try {
-            return interaction.reply("https://discord.com/oauth2/authorize?client_id=1290426522519343187");
-        } catch (error) {
-            return interaction.reply('There was an error trying to send the invite link:', error);
-        }
+        const userId = interaction.user.id;
+
+        const checkQuery = 'SELECT * FROM verification WHERE user_id = ?';
+        db.query(checkQuery, [userId], async (err, result) => {
+            if (err) {
+                console.error(`[ERROR] Error checking user in the database: ${err}`);
+                return interaction.reply('There was an error processing your request.');
+            }
+
+            if (result.length > 0) {
+                return interaction.reply("https://discord.com/oauth2/authorize?client_id=1290426522519343187");
+            } else {
+                return interaction.reply('You need to verify your account first. Please verify your account using `/verify`.');
+            }
+        });
     },
 };

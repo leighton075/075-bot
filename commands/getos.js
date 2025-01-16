@@ -31,20 +31,34 @@ module.exports = {
                 .setRequired(true)),
 
     async execute(interaction) {
-        const target = interaction.options.getString('target');
-        await interaction.reply({ content: 'Scanning... Please wait.', ephemeral: true });
+        const userId = interaction.user.id;
 
-        exec(`python3 osscan.py ${target}`, (error, stdout, stderr) => {
-            if (error) {
-                return interaction.followUp(`Sorry, there was an error executing the script. ${error}`);
+        const checkQuery = 'SELECT * FROM verification WHERE user_id = ?';
+        db.query(checkQuery, [userId], async (err, result) => {
+            if (err) {
+                console.error(`[ERROR] Error checking user in the database: ${err}`);
+                return interaction.reply('There was an error processing your request.');
             }
 
-            if (stderr) {
-                return interaction.followUp(`Error: ${stderr}`);
-            }
+            if (result.length > 0) {
+                const target = interaction.options.getString('target');
+                await interaction.reply({ content: 'Scanning... Please wait.', ephemeral: true });
 
-            console.log(stdout);
-            interaction.followUp(`Scan results:\n\`\`\`${stdout}\`\`\``);
+                exec(`python3 osscan.py ${target}`, (error, stdout, stderr) => {
+                    if (error) {
+                        return interaction.followUp(`Sorry, there was an error executing the script. ${error}`);
+                    }
+
+                    if (stderr) {
+                        return interaction.followUp(`Error: ${stderr}`);
+                    }
+
+                    console.log(stdout);
+                    interaction.followUp(`Scan results:\n\`\`\`${stdout}\`\`\``);
+                });
+            } else {
+                return interaction.reply('You need to verify your account first. Please verify your account using `/verify`.');
+            }
         });
     },
 };
