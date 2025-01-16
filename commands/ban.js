@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits, ButtonBuilder, ButtonStyle, ActionRowBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ActionRowBuilder, ButtonStyle, PermissionFlagsBits } = require('discord.js');
 const mysql = require('mysql2');
 
 // ==========================
@@ -45,37 +45,29 @@ module.exports = {
                     return interaction.reply('There was an error processing your request.');
                 }
 
-                if (result.length === 0) {
-                    return interaction.reply('You need to verify your account first. Please verify your account using `/verify`.');
-                }
-
-                if (!interaction.member.permissions.has(PermissionFlagsBits.BanMembers)) {
-                    return interaction.reply({ content: "You don't have the permission to ban members." });
-                }
-
-                if (!interaction.guild.me.permissions.has(PermissionFlagsBits.BanMembers)) {
-                    return interaction.reply({ content: "I don't have permission to ban members." });
-                }
-
-                const user = interaction.options.getUser('user');
-                const reason = interaction.options.getString('reason') || 'No reason provided';
-
-                const confirm = new ButtonBuilder()
-                    .setCustomId('confirm')
-                    .setLabel('Confirm Ban')
-                    .setStyle(ButtonStyle.Danger);
-
-                const cancel = new ButtonBuilder()
-                    .setCustomId('cancel')
-                    .setLabel('Cancel')
-                    .setStyle(ButtonStyle.Secondary);
-
-                const row = new ActionRowBuilder().addComponents(cancel, confirm);
-
-                try {
-                    if (interaction.user.id === '1087801524282982450') {
-                        return interaction.reply({ content: 'Good try oliver, tell me to fix this if you see this message' });
+                if (result.length > 0) {
+                    if (!interaction.member.permissions.has(PermissionFlagsBits.BanMembers)) {
+                        return interaction.reply({ content: "You don't have the permission to ban members.", ephemeral: true });
                     }
+
+                    if (!interaction.guild.me.permissions.has(PermissionFlagsBits.BanMembers)) {
+                        return interaction.reply({ content: "I don't have permission to ban members.", ephemeral: true });
+                    }
+
+                    const user = interaction.options.getUser('user');
+                    const reason = interaction.options.getString('reason') || 'No reason provided';
+
+                    const confirm = new ButtonBuilder()
+                        .setCustomId('confirm')
+                        .setLabel('Confirm Ban')
+                        .setStyle(ButtonStyle.Danger);
+
+                    const cancel = new ButtonBuilder()
+                        .setCustomId('cancel')
+                        .setLabel('Cancel')
+                        .setStyle(ButtonStyle.Secondary);
+
+                    const row = new ActionRowBuilder().addComponents(cancel, confirm);
 
                     await interaction.reply({
                         content: `Are you sure you want to ban ${user.tag} for reason: ${reason}?`,
@@ -115,9 +107,8 @@ module.exports = {
                             interaction.editReply({ content: 'You took too long to respond. Ban action canceled.', components: [] });
                         }
                     });
-                } catch (error) {
-                    console.error('Error during the ban confirmation process:', error);
-                    return interaction.reply({ content: `There was an error with the ban process.`, ephemeral: true });
+                } else {
+                    return interaction.reply('You need to verify your account first. Please verify your account using `/verify`.');
                 }
             });
         } catch (error) {
