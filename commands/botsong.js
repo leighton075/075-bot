@@ -40,9 +40,27 @@ module.exports = {
 
     async execute(interaction, client) {
         try {
-            await playRandomSong(interaction, client);
+            const userId = interaction.user.id;
+
+            // Verify user in database
+            const checkQuery = 'SELECT * FROM verification WHERE user_id = ?';
+            db.query(checkQuery, [userId], async (err, result) => {
+                if (err) {
+                    console.error(`[ERROR] Error checking user in the database: ${err}`);
+                    return interaction.reply('There was an error processing your request.');
+                }
+
+                if (result.length > 0) {
+                    // User is verified, proceed with playing a random song
+                    await playRandomSong(interaction, client);
+                } else {
+                    // User is not verified
+                    return interaction.reply('You need to verify your account first. Please verify your account using `/verify`.');
+                }
+            });
         } catch (error) {
-            return interaction.followUp({ content: 'There was an error changing the song. Please try again later.' });
+            console.error('[ERROR] Error executing botsong command:', error);
+            return interaction.reply({ content: 'There was an error changing the song. Please try again later.', ephemeral: true });
         }
     },
 };
