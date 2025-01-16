@@ -3,6 +3,24 @@ const axios = require('axios');
 
 const youtubeApiKey = process.env.YOUTUBE_API_KEY;
 
+// ==========================
+//        mySQL Setup
+// ==========================
+const db = mysql.createConnection({
+    host: 'localhost',
+    user: process.env.SQL_USERNAME,
+    password: process.env.SQL_PASSWORD,
+    database: 'bot_verification'
+});
+
+db.connect((err) => {
+    if (err) {
+        console.error(`[ERROR] Error connecting to the database: ${err}`);
+    } else {
+        console.log(`[INFO] Connected to the mySQL database in youtube.js.`);
+    }
+});
+
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('youtube')

@@ -15,7 +15,7 @@ db.connect((err) => {
     if (err) {
         console.error(`[ERROR] Error connecting to the database: ${err}`);
     } else {
-        console.log(`[INFO] Connected to the mySQL database.`);
+        console.log(`[INFO] Connected to the mySQL database in role.js.`);
     }
 });
 
