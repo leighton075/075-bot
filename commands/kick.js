@@ -42,7 +42,11 @@ module.exports = {
             return interaction.reply({ content: "You don't have the permission to kick members." });
         }
     
-        if (!interaction.guild.me || !interaction.guild.me.permissions.has(PermissionFlagsBits.KickMembers)) {
+        if (!interaction.guild.me) {
+            return interaction.reply({ content: "I am not fully initialized in the server, please try again later." });
+        }
+    
+        if (!interaction.guild.me.permissions.has(PermissionFlagsBits.KickMembers)) {
             return interaction.reply({ content: "I don't have permission to kick members." });
         }
     
@@ -106,5 +110,5 @@ module.exports = {
         } catch (error) {
             return interaction.reply({ content: `There was an error with the kick process: ${error}`, ephemeral: true });
         }
-    },                
+    },                            
 };
