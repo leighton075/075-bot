@@ -32,7 +32,8 @@ module.exports = {
             option
                 .setName('reason')
                 .setDescription('Reason for ban')
-                .setRequired(false)),
+                .setRequired(false))
+        .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
 
     async execute(interaction) {
         try {
@@ -46,6 +47,7 @@ module.exports = {
                 }
 
                 if (result.length > 0) {
+                    /*
                     if (!interaction.member.permissions.has(PermissionFlagsBits.BanMembers)) {
                         return interaction.reply({ content: "You don't have the permission to ban members.", ephemeral: true });
                     }
@@ -53,6 +55,7 @@ module.exports = {
                     if (!interaction.guild.me.permissions.has(PermissionFlagsBits.BanMembers)) {
                         return interaction.reply({ content: "I don't have permission to ban members.", ephemeral: true });
                     }
+                    */
 
                     const user = interaction.options.getUser('user');
                     const reason = interaction.options.getString('reason') || 'No reason provided';
