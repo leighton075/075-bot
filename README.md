@@ -11,7 +11,7 @@ Bot is designed for use on a small private server because I don't like Maki. It'
 - **Fortnite Stats/Status**: Uses the fortnite-api and the fornite server status api to get info about server status's and player stats.
 - **YouTube Info**: Gets info about channels and videos.
 - **Steam Inventory Info**: Uses the steam web api to get info about a users profile (recently played games etc.) and the value of their steam inventory.
-- **Username Tracking**: Uses the sherlock via apify to search for a username across the web.
+- **Username Tracking**: Uses the sherlock api via apify to search for a username across the web.
 - **Squaring Calc**: Because people don't know how to square numbers.
 - **Soundboard**: Provides functionality to play sounds in vc.
 - **User Verification**: Users must verify via a command and their id and username is stored in a mySQL database.
