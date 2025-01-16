@@ -23,6 +23,7 @@ Bot is designed for use on a small private server because I don't like Maki. It'
 - Remove user authentication on kick/ban
 - Add verification to all commands (maybe not admin commands)
 - Unban command
+- Gambling
 
 ## Disclaimer
 
