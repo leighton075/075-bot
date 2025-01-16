@@ -14,7 +14,7 @@ Bot is designed for use on a small private server because I don't like Maki. It'
 - **Username Tracking**: Uses the sherlock api via apify to search for a username across the web.
 - **Squaring Calc**: Because people don't know how to square numbers.
 - **Soundboard**: Provides functionality to play sounds in vc.
-- **User Verification**: Users must verify via a command and their id and username is stored in a mySQL database.
+- **User Verification**: Users must verify via a command and their id and username are stored in a mySQL database.
 
 ## Todo
 
