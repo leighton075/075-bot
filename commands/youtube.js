@@ -1,5 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js');
 const axios = require('axios');
+const mysql = require('mysql2');
 
 const youtubeApiKey = process.env.YOUTUBE_API_KEY;
 
@@ -15,7 +16,7 @@ const db = mysql.createConnection({
 
 db.connect((err) => {
     if (err) {
-        console.error(`[ERROR] Error connecting to the database: ${err}`);
+        console.error(`[ERROR] Error connecting to the database in youtube.js: ${err}`);
     } else {
         console.log(`[INFO] Connected to the mySQL database in youtube.js.`);
     }

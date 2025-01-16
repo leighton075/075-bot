@@ -13,7 +13,7 @@ const db = mysql.createConnection({
 
 db.connect((err) => {
     if (err) {
-        console.error(`[ERROR] Error connecting to the database: ${err}`);
+        console.error(`[ERROR] Error connecting to the database in nuke.js: ${err}`);
     } else {
         console.log(`[INFO] Connected to the mySQL database in nuke.js.`);
     }
