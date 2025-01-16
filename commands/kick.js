@@ -32,7 +32,10 @@ module.exports = {
             option
                 .setName('reason')
                 .setDescription('Reason for kick')
-                .setRequired(false)),
+                .setRequired(false))
+        .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers),
+        
+
 
     async execute(interaction) {
         if (!interaction.member.permissions.has(PermissionFlagsBits.KickMembers)) {
