@@ -28,26 +28,51 @@ module.exports = {
 
     async execute(interaction) {
         try {
-            await interaction.deferReply();
-            
-            const folderPath = path.join(__dirname, '../evelyn');
-            const files = fs.readdirSync(folderPath);
-            const validFiles = files.filter(file => file.endsWith('.mp4'));
+            const userId = interaction.user.id;
 
-            if (validFiles.length === 0) {
-                return interaction.editReply({ content: 'No Evelyn edits available at the moment.' });
-            }
+            // Verify user in database
+            const checkQuery = 'SELECT * FROM verification WHERE user_id = ?';
+            db.query(checkQuery, [userId], async (err, result) => {
+                if (err) {
+                    console.error(`[ERROR] Error checking user in the database: ${err}`);
+                    return interaction.reply('There was an error processing your request.');
+                }
 
-            const randomFile = validFiles[Math.floor(Math.random() * validFiles.length)];
-            const filePath = path.join(folderPath, randomFile);
-
-            return interaction.editReply({
-                files: [filePath],
+                if (result.length > 0) {
+                    // User is verified, proceed to get a random Evelyn edit
+                    await getRandomEvelynEdit(interaction);
+                } else {
+                    // User is not verified
+                    return interaction.reply('You need to verify your account first. Please verify your account using `/verify`.');
+                }
             });
-
         } catch (error) {
-            console.error('Error getting a video of Evelyn:', error);
-            return interaction.editReply({ content: 'There was an error getting a video of Evelyn. Please try again later.' });
+            console.error('[ERROR] Error executing evelyn command:', error);
+            return interaction.reply({ content: 'There was an error getting a video of Evelyn. Please try again later.', ephemeral: true });
         }
     },
 };
+
+async function getRandomEvelynEdit(interaction) {
+    try {
+        await interaction.deferReply();
+
+        const folderPath = path.join(__dirname, '../evelyn');
+        const files = fs.readdirSync(folderPath);
+        const validFiles = files.filter(file => file.endsWith('.mp4'));
+
+        if (validFiles.length === 0) {
+            return interaction.editReply({ content: 'No Evelyn edits available at the moment.' });
+        }
+
+        const randomFile = validFiles[Math.floor(Math.random() * validFiles.length)];
+        const filePath = path.join(folderPath, randomFile);
+
+        return interaction.editReply({
+            files: [filePath],
+        });
+    } catch (error) {
+        console.error('Error getting a video of Evelyn:', error);
+        return interaction.editReply({ content: 'There was an error getting a video of Evelyn. Please try again later.' });
+    }
+}
