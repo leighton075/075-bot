@@ -25,23 +25,13 @@ module.exports = {
         .setDescription('Check the bot\'s response time'),
 
     async execute(interaction) {
-        const userId = interaction.user.id;
-        
-        db.query('SELECT verified FROM users WHERE user_id = ?', [userId], (err, results) => {
-            if (err) {
-                return interaction.reply('There was an error checking your verification status.');
-            }
+        const start = Date.now();
 
-            if (results.length === 0 || !results[0].verified) {
-                return interaction.reply('You are not verified. Please complete the verification process.');
-            }
+        await interaction.reply('Pinging...');
 
-            const start = Date.now();
-            interaction.reply('Pinging...').then(() => {
-                const end = Date.now();
-                const ping = end - start;
-                interaction.editReply(`pong! ${ping}ms`);
-            });
-        });
+        const end = Date.now();
+
+        const ping = end - start;
+        interaction.editReply(`pong! ${ping}ms`);
     },
 };

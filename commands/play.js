@@ -35,65 +35,53 @@ module.exports = {
             )),
 
     async execute(interaction) {
-        const userId = interaction.user.id;
+        const sound = interaction.options.getString('sound');
+        const voiceChannel = interaction.member.voice.channel;
+        let hasReplied = false;
 
-        db.query('SELECT verified FROM users WHERE user_id = ?', [userId], (err, results) => {
-            if (err) {
-                return interaction.reply('There was an error checking your verification status.');
+        if (!voiceChannel) {
+            return interaction.reply({ content: 'You need to join a voice channel first!', ephemeral: true });
+        }
+
+        try {
+            await interaction.deferReply();
+
+            const connection = joinVoiceChannel({
+                channelId: voiceChannel.id,
+                guildId: interaction.guild.id,
+                adapterCreator: interaction.guild.voiceAdapterCreator,
+            });
+
+            const filePath = path.resolve(__dirname, '../sounds', `${sound}.mp3`);
+
+            if (!fs.existsSync(filePath)) {
+                console.error('File not found:', filePath);
+                return interaction.followUp({ content: 'Sound file not found.', ephemeral: true });
             }
 
-            if (results.length === 0 || !results[0].verified) {
-                return interaction.reply('You are not verified. Please complete the verification process.');
-            }
+            const resource = createAudioResource(fs.createReadStream(filePath));
+            const player = createAudioPlayer();
 
-            const sound = interaction.options.getString('sound');
-            const voiceChannel = interaction.member.voice.channel;
-            let hasReplied = false;
+            player.play(resource);
+            connection.subscribe(player);
 
-            if (!voiceChannel) {
-                return interaction.reply({ content: 'You need to join a voice channel first!', ephemeral: true });
-            }
-
-            try {
-                interaction.deferReply();
-
-                const connection = joinVoiceChannel({
-                    channelId: voiceChannel.id,
-                    guildId: interaction.guild.id,
-                    adapterCreator: interaction.guild.voiceAdapterCreator,
-                });
-
-                const filePath = path.resolve(__dirname, '../sounds', `${sound}.mp3`);
-
-                if (!fs.existsSync(filePath)) {
-                    console.error('File not found:', filePath);
-                    return interaction.followUp({ content: 'Sound file not found.', ephemeral: true });
+            player.on(AudioPlayerStatus.Playing, () => {
+                if (!hasReplied) {
+                    interaction.followUp({ content: `Now playing: ${sound}`, ephemeral: true });
+                    hasReplied = true;
                 }
+            });
 
-                const resource = createAudioResource(fs.createReadStream(filePath));
-                const player = createAudioPlayer();
+            player.on(AudioPlayerStatus.Idle, () => {
+                connection.destroy();
+            });
 
-                player.play(resource);
-                connection.subscribe(player);
+            connection.on(VoiceConnectionStatus.Disconnected, () => {
+                connection.destroy();
+            });
 
-                player.on(AudioPlayerStatus.Playing, () => {
-                    if (!hasReplied) {
-                        interaction.followUp({ content: `Now playing: ${sound}`, ephemeral: true });
-                        hasReplied = true;
-                    }
-                });
-
-                player.on(AudioPlayerStatus.Idle, () => {
-                    connection.destroy();
-                });
-
-                connection.on(VoiceConnectionStatus.Disconnected, () => {
-                    connection.destroy();
-                });
-
-            } catch (error) {
-                return interaction.followUp({ content: `There was an error playing the sound: ${error}`, ephemeral: true });
-            }
-        });
+        } catch (error) {
+            return interaction.followUp({ content: `There was an error playing the sound:v${error}`, ephemeral: true });
+        }
     },
 };

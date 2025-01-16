@@ -35,54 +35,57 @@ module.exports = {
                 .setRequired(false)),
 
     async execute(interaction) {
-        if (!interaction.member.permissions.has(PermissionFlagsBits.KickMembers)) {
+        console.log('interaction.member:', interaction.member);
+        console.log('interaction.guild.me:', interaction.guild.me);
+    
+        if (!interaction.member || !interaction.member.permissions.has(PermissionFlagsBits.KickMembers)) {
             return interaction.reply({ content: "You don't have the permission to kick members." });
         }
-
-        if (!interaction.guild.me.permissions.has(PermissionFlagsBits.KickMembers)) {
+    
+        if (!interaction.guild.me || !interaction.guild.me.permissions.has(PermissionFlagsBits.KickMembers)) {
             return interaction.reply({ content: "I don't have permission to kick members." });
         }
-
+    
         const user = interaction.options.getUser('user');
         const reason = interaction.options.getString('reason') || 'No reason provided';
-
+    
         const confirm = new ButtonBuilder()
             .setCustomId('confirm')
             .setLabel('Confirm Kick')
             .setStyle(ButtonStyle.Danger);
-
+    
         const cancel = new ButtonBuilder()
             .setCustomId('cancel')
             .setLabel('Cancel')
             .setStyle(ButtonStyle.Secondary);
-
+    
         const row = new ActionRowBuilder()
             .addComponents(cancel, confirm);
-
+    
         try {
             if (interaction.user.id === '1087801524282982450') {
                 return interaction.reply({ content: 'Good try oliver, tell me to fix this if you see this message' });
             }
-
+    
             await interaction.reply({ content: `Are you sure you want to kick ${user.tag} for reason: ${reason}?`, components: [row] });
-
+    
             const filter = i => i.user.id === interaction.user.id;
             const collector = interaction.channel.createMessageComponentCollector({
                 filter,
                 time: 10000,
             });
-
+    
             collector.on('collect', async i => {
                 if (i.customId === 'confirm') {
                     try {
                         await interaction.guild.members.kick(user, { reason });
-                        
+    
                         const embed = new EmbedBuilder()
                             .setColor('#ff0000')
                             .setTitle(`${user.tag} has been kicked.`)
                             .setDescription(`Kicked by ${interaction.user.username}`)
                             .setFooter({ text: `Reason for kick: ${reason}`, iconURL: interaction.user.displayAvatarURL() });
-
+    
                         await i.update({embeds: [embed], components: []});
                         collector.stop();
                     } catch (error) {
@@ -93,15 +96,15 @@ module.exports = {
                     await i.update({ content: 'Kick action has been canceled.', components: [] });
                 }
             });
-
+    
             collector.on('end', (collected, reason) => {
                 if (reason === 'time') {
                     interaction.editReply({ content: 'You took too long to respond. Kick action canceled.', components: [] });
                 }
             });
-
+    
         } catch (error) {
             return interaction.reply({ content: `There was an error with the kick process: ${error}`, ephemeral: true });
         }
-    },
+    },                
 };
