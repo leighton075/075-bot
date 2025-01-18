@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, AttachmentBuilder, EmbedBuilder } = require('discord.js');
 const mysql = require('mysql2');
-const { createCanvas, loadImage } = require('canvas');
+const { createCanvas, loadImage, registerFont, } = require('canvas');
 const fs = require('fs');
 const path = require('path');
 
