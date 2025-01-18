@@ -30,48 +30,60 @@ module.exports = {
                 .setRequired(false)),
 
     async execute(interaction) {
-        const user = interaction.options.getUser('user') || interaction.user;
+        const userId = interaction.user.id;
 
-        try {
-            const member = await interaction.guild.members.fetch(user.id);
+        const checkQuery = 'SELECT * FROM verification WHERE user_id = ?';
+        db.query(checkQuery, [userId], async (err, result) => {
+            if (err) {
+                console.error(`[ERROR] Error checking user in the database: ${err}`);
+                return interaction.reply('There was an error processing your request.');
+            }
 
-            const roleCount = member.roles.cache.size - 1; // Exclude @everyone role
-            const isOwner = user.id === interaction.guild.ownerId;
-            const isAdmin = member.permissions.has('Administrator');
+            if (result > 0) {
+                const user = interaction.options.getUser('user') || interaction.user;
 
-            let category = 'Member';
-            if (isOwner) category = 'Owner';
-            else if (isAdmin) category = 'Admin';
-
-            const daysSinceCreation = Math.floor((Date.now() - user.createdAt) / (1000 * 60 * 60 * 24));
-            const daysSinceJoin = Math.floor((Date.now() - member.joinedAt) / (1000 * 60 * 60 * 24));
-
-            const embed = new EmbedBuilder()
-                .setColor('#cb668b')
-                .setTitle('User Information')
-                .setAuthor({
-                    name: user.username,
-                    iconURL: user.displayAvatarURL(),
-                    url: 'https://www.youtube.com/watch?v=xvFZjo5PgG0'
-                })
-                .setThumbnail(user.displayAvatarURL())
-                .addFields([
-                    { name: 'Creation Date', value: `${user.createdAt.toDateString()}, ${daysSinceCreation} days ago`, inline: false },
-                    { name: 'Join Date', value: `${member.joinedAt.toDateString()}, ${daysSinceJoin} days ago`, inline: false },
-                    { name: 'Category', value: category, inline: false },
-                    { 
-                        name: `Roles (${roleCount})`, 
-                        value: member.roles.cache.filter(role => role.name !== '@everyone') // Remove @everyone role
-                                     .map(role => role.name)
-                                     .join(', ') || 'No roles', 
-                        inline: false 
-                    }
-                ]);
-
-            return interaction.reply({ embeds: [embed] });
-        } catch (error) {
-            console.error('Error getting user\'s information', error);
-            return interaction.reply({ content: 'There was an error getting the user\'s information', ephemeral: true });
-        }
+                try {
+                    const member = await interaction.guild.members.fetch(user.id);
+        
+                    const roleCount = member.roles.cache.size - 1; // Exclude @everyone role
+                    const isOwner = user.id === interaction.guild.ownerId;
+                    const isAdmin = member.permissions.has('Administrator');
+        
+                    let category = 'Member';
+                    if (isOwner) category = 'Owner';
+                    else if (isAdmin) category = 'Admin';
+        
+                    const daysSinceCreation = Math.floor((Date.now() - user.createdAt) / (1000 * 60 * 60 * 24));
+                    const daysSinceJoin = Math.floor((Date.now() - member.joinedAt) / (1000 * 60 * 60 * 24));
+        
+                    const embed = new EmbedBuilder()
+                        .setColor('#cb668b')
+                        .setTitle('User Information')
+                        .setAuthor({
+                            name: user.username,
+                            iconURL: user.displayAvatarURL(),
+                            url: 'https://www.youtube.com/watch?v=xvFZjo5PgG0'
+                        })
+                        .setThumbnail(user.displayAvatarURL())
+                        .addFields([
+                            { name: 'Creation Date', value: `${user.createdAt.toDateString()}, ${daysSinceCreation} days ago`, inline: false },
+                            { name: 'Join Date', value: `${member.joinedAt.toDateString()}, ${daysSinceJoin} days ago`, inline: false },
+                            { name: 'Category', value: category, inline: false },
+                            { 
+                                name: `Roles (${roleCount})`, 
+                                value: member.roles.cache.filter(role => role.name !== '@everyone') // Remove @everyone role
+                                             .map(role => role.name)
+                                             .join(', ') || 'No roles', 
+                                inline: false 
+                            }
+                        ]);
+        
+                    return interaction.reply({ embeds: [embed] });
+                } catch (error) {
+                    console.error('Error getting user\'s information', error);
+                    return interaction.reply({ content: 'There was an error getting the user\'s information', ephemeral: true });
+                }
+            }
+        });
     },
 };
