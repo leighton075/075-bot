@@ -118,6 +118,8 @@ module.exports = {
                 } catch (error) {
                     return interaction.reply({ content: `There was an error with the kick process: ${error}`, ephemeral: true });
                 }
+            } else {
+                return interaction.reply('You need to verify your account first. Please verify your account using `/verify`.')
             }
         })
     },
