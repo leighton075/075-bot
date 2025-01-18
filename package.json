@@ -11,6 +11,7 @@
     "@discordjs/voice": "^0.18.0",
     "apify-client": "^2.11.0",
     "axios": "^1.7.9",
+    "canvas": "^3.0.1",
     "discord.js": "^14.16.3",
     "dotenv": "^16.4.5",
     "fluent-ffmpeg": "^2.1.3",
