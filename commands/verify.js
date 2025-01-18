@@ -1,5 +1,8 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, AttachmentBuilder, EmbedBuilder } = require('discord.js');
 const mysql = require('mysql2');
+const { createCanvas, loadImage } = require('canvas');
+const fs = require('fs');
+const path = require('path');
 
 // ==========================
 //        mySQL Setup
@@ -19,13 +22,42 @@ db.connect((err) => {
     }
 });
 
-function captchaGenerate(length = 5) {
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz12345678910!@#$%^&*()_+-={}[]|<>,./?:;`~';
+function generateCaptchaString(length = 5) {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let captcha = '';
     for (let i = 0; i < length; i++) {
         captcha += characters.charAt(Math.floor(Math.random() * characters.length));
     }
     return captcha;
+}
+
+async function generateCaptchaImage(captchaText) {
+    const canvas = createCanvas(300, 100);
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = '#f0f0f0';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    for (let i = 0; i < 50; i++) {
+        ctx.fillStyle = `rgba(0, 0, 0, ${Math.random() * 0.2})`;
+        ctx.beginPath();
+        ctx.arc(
+            Math.random() * canvas.width,
+            Math.random() * canvas.height,
+            Math.random() * 3,
+            0,
+            Math.PI * 2
+        );
+        ctx.fill();
+    }
+
+    ctx.font = 'bold 40px Sans';
+    ctx.fillStyle = '#000000';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(captchaText, canvas.width / 2, canvas.height / 2);
+
+    return canvas.toBuffer();
 }
 
 module.exports = {
@@ -37,8 +69,18 @@ module.exports = {
         const userId = interaction.user.id;
         const username = interaction.user.username;
 
-        const captcha = captchaGenerate();
-        await interaction.reply(`Please reply with the following CAPTCHA to verify: \`${captcha}\``);
+        const captcha = generateCaptchaString();
+
+        const captchaImageBuffer = await generateCaptchaImage(captcha);
+        const captchaAttachment = new AttachmentBuilder(captchaImageBuffer, { name: 'captcha.png' });
+
+        const embed = new EmbedBuilder()
+            .setTitle('Account Verification')
+            .setDescription('Please type the characters you see in the image below to verify your account.')
+            .setColor('#cb668b')
+            .setImage('attachment://captcha.png');
+
+        await interaction.reply({ embeds: [embed], files: [captchaAttachment] });
 
         const filter = (message) => message.author.id === userId && message.content === captcha;
         const collector = interaction.channel.createMessageCollector({ filter, time: 30000 }); // 30 seconds timeout
