@@ -19,6 +19,15 @@ db.connect((err) => {
     }
 });
 
+function captchaGenerate(length = 5) {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz12345678910!@#$%^&*()_+-={}[]|<>,./?:;`~';
+    let captcha = '';
+    for (let i = 0; i < length; i++) {
+        captcha += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+    return captcha;
+}
+
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('verify')
@@ -28,37 +37,53 @@ module.exports = {
         const userId = interaction.user.id;
         const username = interaction.user.username;
 
-        const checkQuery = 'SELECT * FROM verification WHERE user_id = ?';
-        db.query(checkQuery, [userId], (err, result) => {
-            if (err) {
-                console.error(`[ERROR] Error checking user in the database: ${err}`);
-                return interaction.reply('There was an error verifying your account.');
-            }
+        const captcha = captchaGenerate();
+        await interaction.reply(`Please reply with the following CAPTCHA to verify: \`${captcha}\``);
 
-            if (result.length > 0) {
-                const existingUsername = result[0].username;
+        const filter = (message) => message.author.id === userId && message.content === captcha;
+        const collector = interaction.channel.createMessageCollector({ filter, time: 30000 }); // 30 seconds timeout
 
-                if (existingUsername !== username) {
-                    const updateQuery = 'UPDATE verification SET username = ? WHERE user_id = ?';
-                    db.query(updateQuery, [username, userId], (updateErr) => {
-                        if (updateErr) {
-                            console.error(`[ERROR] Error updating username: ${updateErr}`);
-                            return interaction.reply('There was an error updating your username.');
-                        }
-                        interaction.reply('Your username has been updated in the database.');
-                    });
-                } else {
-                    interaction.reply('Your user ID and username are already in the database.');
+        collector.on('collect', (message) => {
+            collector.stop();
+
+            const checkQuery = 'SELECT * FROM verification WHERE user_id = ?';
+            db.query(checkQuery, [userId], (err, result) => {
+                if (err) {
+                    console.error(`[ERROR] Error checking user in the database: ${err}`);
+                    return message.reply('There was an error verifying your account.');
                 }
-            } else {
-                const insertQuery = 'INSERT INTO verification (user_id, username) VALUES (?, ?)';
-                db.query(insertQuery, [userId, username], (insertErr) => {
-                    if (insertErr) {
-                        console.error(`[ERROR] Error adding user to the database: ${insertErr}`);
-                        return interaction.reply('There was an error adding your account to the database.');
+
+                if (result.length > 0) {
+                    const existingUsername = result[0].username;
+
+                    if (existingUsername !== username) {
+                        const updateQuery = 'UPDATE verification SET username = ? WHERE user_id = ?';
+                        db.query(updateQuery, [username, userId], (updateErr) => {
+                            if (updateErr) {
+                                console.error(`[ERROR] Error updating username: ${updateErr}`);
+                                return message.reply('There was an error updating your username.');
+                            }
+                            message.reply('Your username has been updated in the database.');
+                        });
+                    } else {
+                        message.reply('Your user ID and username are already in the database.');
                     }
-                    interaction.reply('Your user ID and username have been added to the verification database.');
-                });
+                } else {
+                    const insertQuery = 'INSERT INTO verification (user_id, username) VALUES (?, ?)';
+                    db.query(insertQuery, [userId, username], (insertErr) => {
+                        if (insertErr) {
+                            console.error(`[ERROR] Error adding user to the database: ${insertErr}`);
+                            return message.reply('There was an error adding your account to the database.');
+                        }
+                        message.reply('Your user ID and username have been added to the verification database.');
+                    });
+                }
+            });
+        });
+
+        collector.on('end', (collected, reason) => {
+            if (reason === 'time') {
+                interaction.followUp('Verification failed: you did not reply with the correct CAPTCHA in time.');
             }
         });
     },
