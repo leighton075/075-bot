@@ -4,7 +4,7 @@ const { createCanvas, loadImage, registerFont, } = require('canvas');
 const fs = require('fs');
 const path = require('path');
 
-registerFont(path.join(__dirname, 'fonts', 'Corinthia.ttf'), { family: 'Corinthia' });
+registerFont(path.join(__dirname, '..', 'fonts', 'Corinthia.ttf'), { family: 'Corinthia' });
 
 // ==========================
 //        mySQL Setup
