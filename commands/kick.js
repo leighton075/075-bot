@@ -48,65 +48,77 @@ module.exports = {
         }
         */
 
-        const user = interaction.options.getUser('user');
-        const reason = interaction.options.getString('reason') || 'No reason provided';
+        const userId = interaction.user.id;
 
-        const confirm = new ButtonBuilder()
-            .setCustomId('confirm')
-            .setLabel('Confirm Kick')
-            .setStyle(ButtonStyle.Danger);
-
-        const cancel = new ButtonBuilder()
-            .setCustomId('cancel')
-            .setLabel('Cancel')
-            .setStyle(ButtonStyle.Secondary);
-
-        const row = new ActionRowBuilder()
-            .addComponents(cancel, confirm);
-
-        try {
-            if (interaction.user.id === '1087801524282982450') {
-                return interaction.reply({ content: 'Good try oliver, tell me to fix this if you see this message' });
+        const checkQuery = 'SELECT * FROM verification WHERE user_id = ?';
+        db.query(checkQuery, [userId], async (err, result) => {
+            if (err) {
+                console.error(`[ERROR] Error checking user in the database: ${err}`);
+                return interaction.reply('There was an error processing your request.');
             }
 
-            await interaction.reply({ content: `Are you sure you want to kick ${user.tag} for reason: ${reason}?`, components: [row] });
+            if (results.length > 0) {
+                const user = interaction.options.getUser('user');
+                const reason = interaction.options.getString('reason') || 'No reason provided';
 
-            const filter = i => i.user.id === interaction.user.id;
-            const collector = interaction.channel.createMessageComponentCollector({
-                filter,
-                time: 10000,
-            });
+                const confirm = new ButtonBuilder()
+                    .setCustomId('confirm')
+                    .setLabel('Confirm Kick')
+                    .setStyle(ButtonStyle.Danger);
 
-            collector.on('collect', async i => {
-                if (i.customId === 'confirm') {
-                    try {
-                        await interaction.guild.members.kick(user, { reason });
-                        
-                        const embed = new EmbedBuilder()
-                            .setColor('#ff0000')
-                            .setTitle(`${user.tag} has been kicked.`)
-                            .setDescription(`Kicked by ${interaction.user.username}`)
-                            .setFooter({ text: `Reason for kick: ${reason}`, iconURL: interaction.user.displayAvatarURL() });
+                const cancel = new ButtonBuilder()
+                    .setCustomId('cancel')
+                    .setLabel('Cancel')
+                    .setStyle(ButtonStyle.Secondary);
 
-                        await i.update({embeds: [embed], components: []});
-                        collector.stop();
-                    } catch (error) {
-                        interaction.reply(`There was an error ${error}`);
-                        await i.update({ content: `There was an error kicking ${user.tag}`, components: [] });
+                const row = new ActionRowBuilder()
+                    .addComponents(cancel, confirm);
+
+                try {
+                    if (interaction.user.id === '1087801524282982450') {
+                        return interaction.reply({ content: 'Good try oliver, tell me to fix this if you see this message' });
                     }
-                } else if (i.customId === 'cancel') {
-                    await i.update({ content: 'Kick action has been canceled.', components: [] });
+        
+                    await interaction.reply({ content: `Are you sure you want to kick ${user.tag} for reason: ${reason}?`, components: [row] });
+        
+                    const filter = i => i.user.id === interaction.user.id;
+                    const collector = interaction.channel.createMessageComponentCollector({
+                        filter,
+                        time: 10000,
+                    });
+        
+                    collector.on('collect', async i => {
+                        if (i.customId === 'confirm') {
+                            try {
+                                await interaction.guild.members.kick(user, { reason });
+                                
+                                const embed = new EmbedBuilder()
+                                    .setColor('#ff0000')
+                                    .setTitle(`${user.tag} has been kicked.`)
+                                    .setDescription(`Kicked by ${interaction.user.username}`)
+                                    .setFooter({ text: `Reason for kick: ${reason}`, iconURL: interaction.user.displayAvatarURL() });
+        
+                                await i.update({embeds: [embed], components: []});
+                                collector.stop();
+                            } catch (error) {
+                                interaction.reply(`There was an error ${error}`);
+                                await i.update({ content: `There was an error kicking ${user.tag}`, components: [] });
+                            }
+                        } else if (i.customId === 'cancel') {
+                            await i.update({ content: 'Kick action has been canceled.', components: [] });
+                        }
+                    });
+        
+                    collector.on('end', (collected, reason) => {
+                        if (reason === 'time') {
+                            interaction.editReply({ content: 'You took too long to respond. Kick action canceled.', components: [] });
+                        }
+                    });
+        
+                } catch (error) {
+                    return interaction.reply({ content: `There was an error with the kick process: ${error}`, ephemeral: true });
                 }
-            });
-
-            collector.on('end', (collected, reason) => {
-                if (reason === 'time') {
-                    interaction.editReply({ content: 'You took too long to respond. Kick action canceled.', components: [] });
-                }
-            });
-
-        } catch (error) {
-            return interaction.reply({ content: `There was an error with the kick process: ${error}`, ephemeral: true });
-        }
+            }
+        })
     },
 };
