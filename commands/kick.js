@@ -35,19 +35,7 @@ module.exports = {
                 .setRequired(false))
         .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers),
         
-
-
     async execute(interaction) {
-        /*
-        if (!interaction.member.permissions.has(PermissionFlagsBits.KickMembers)) {
-            return interaction.reply({ content: "You don't have the permission to kick members." });
-        }
-
-        if (!interaction.guild.me.permissions.has(PermissionFlagsBits.KickMembers)) {
-            return interaction.reply({ content: "I don't have permission to kick members." });
-        }
-        */
-
         const userId = interaction.user.id;
 
         const checkQuery = 'SELECT * FROM verification WHERE user_id = ?';
