@@ -57,7 +57,7 @@ module.exports = {
                 return interaction.reply('There was an error processing your request.');
             }
 
-            if (results.length > 0) {
+            if (result.length > 0) {
                 const user = interaction.options.getUser('user');
                 const reason = interaction.options.getString('reason') || 'No reason provided';
 
