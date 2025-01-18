@@ -4,6 +4,8 @@ const { createCanvas, loadImage } = require('canvas');
 const fs = require('fs');
 const path = require('path');
 
+registerFont(path.join(__dirname, 'fonts', 'Corinthia.ttf'), { family: 'Corinthia' });
+
 // ==========================
 //        mySQL Setup
 // ==========================
@@ -51,7 +53,7 @@ async function generateCaptchaImage(captchaText) {
         ctx.fill();
     }
 
-    ctx.font = 'bold 40px Sans';
+    ctx.font = 'bold 40px "Corinthia"';
     ctx.fillStyle = '#000000';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
