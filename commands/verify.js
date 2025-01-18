@@ -85,7 +85,7 @@ module.exports = {
         await interaction.reply({ embeds: [embed], files: [captchaAttachment] });
 
         const filter = (message) => message.author.id === userId && message.content === captcha;
-        const collector = interaction.channel.createMessageCollector({ filter, time: 30000 }); // 30 seconds timeout
+        const collector = interaction.channel.createMessageCollector({ filter, time: 10000 }); // 30 seconds timeout
 
         collector.on('collect', (message) => {
             collector.stop();
