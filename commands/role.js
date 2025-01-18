@@ -52,69 +52,83 @@ module.exports = {
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
 
     async execute(interaction) {
-        const subcommand = interaction.options.getSubcommand();
+        const userId = interaction.user.id;
 
-        if (subcommand === 'add') {
-            const user = interaction.options.getUser('user');
-            const role = interaction.options.getRole('role');
-
-            if (!interaction.member.permissions.has(PermissionFlagsBits.ManageRoles)) {
-                return interaction.reply({ content: 'You do not have permission to use this command.', ephemeral: true });
+        const checkQuery = 'SELECT * FROM verification WHERE user_id = ?';
+        db.query(checkQuery, [userId], async (err, result) => {
+            if (err) {
+                console.error(`[ERROR] Error checking user in the database: ${err}`);
+                return interaction.reply('There was an error processing your request.');
             }
 
-            if (!user) {
-                return interaction.reply({ content: 'User does not exist.', ephemeral: true});
-            }
+            if (result.length > 0) {
+                const subcommand = interaction.options.getSubcommand();
 
-            if (!role) {
-                return interaction.reply({ content: 'Role does not exist.', ephemeral: true});
-            }
-
-            try {
-                const guild = interaction.guild;
-                const member = await guild.members.fetch(user.id);
-
-                if (member.roles.cache.has(role.id)) {
-                    return interaction.reply({ content: `${user.tag} already has the ${role.name} role.`, ephemeral: true });
+                if (subcommand === 'add') {
+                    const user = interaction.options.getUser('user');
+                    const role = interaction.options.getRole('role');
+        
+                    if (!interaction.member.permissions.has(PermissionFlagsBits.ManageRoles)) {
+                        return interaction.reply({ content: 'You do not have permission to use this command.', ephemeral: true });
+                    }
+        
+                    if (!user) {
+                        return interaction.reply({ content: 'User does not exist.', ephemeral: true});
+                    }
+        
+                    if (!role) {
+                        return interaction.reply({ content: 'Role does not exist.', ephemeral: true});
+                    }
+        
+                    try {
+                        const guild = interaction.guild;
+                        const member = await guild.members.fetch(user.id);
+        
+                        if (member.roles.cache.has(role.id)) {
+                            return interaction.reply({ content: `${user.tag} already has the ${role.name} role.`, ephemeral: true });
+                        }
+        
+                        await member.roles.add(role);
+                        return interaction.reply({ content: `Added the ${role.name} role to ${member.user.tag}` });
+                    } catch (error) {
+                        console.error('Error adding role:', error);
+                        return interaction.reply({ content: 'There was an error adding the role.', ephemeral: true });
+                    }
                 }
-
-                await member.roles.add(role);
-                return interaction.reply({ content: `Added the ${role.name} role to ${member.user.tag}` });
-            } catch (error) {
-                console.error('Error adding role:', error);
-                return interaction.reply({ content: 'There was an error adding the role.', ephemeral: true });
-            }
-        }
-
-        if (subcommand === 'remove') {
-            const user = interaction.options.getUser('user');
-            const role = interaction.options.getRole('role');
-
-            if (!interaction.member.permissions.has(PermissionFlagsBits.ManageRoles)) {
-                return interaction.reply({ content: 'You do not have permission to use this command.', ephemeral: true });
-            }
-
-            if (!user) {
-                return interaction.reply({ content: 'User does not exist.', ephemeral: true});
-            }
-
-            if (!role) {
-                return interaction.reply({ content: 'Role does not exist.', ephemeral: true});
-            }
-
-            try {
-                const guild = interaction.guild;
-                const member = await guild.members.fetch(user.id);
-
-                if (!member.roles.cache.has(role.id)) {
-                    return interaction.reply({ content: `${user.tag} does not have the ${role.name} role.`, ephemeral: true });
+        
+                if (subcommand === 'remove') {
+                    const user = interaction.options.getUser('user');
+                    const role = interaction.options.getRole('role');
+        
+                    if (!interaction.member.permissions.has(PermissionFlagsBits.ManageRoles)) {
+                        return interaction.reply({ content: 'You do not have permission to use this command.', ephemeral: true });
+                    }
+        
+                    if (!user) {
+                        return interaction.reply({ content: 'User does not exist.', ephemeral: true});
+                    }
+        
+                    if (!role) {
+                        return interaction.reply({ content: 'Role does not exist.', ephemeral: true});
+                    }
+        
+                    try {
+                        const guild = interaction.guild;
+                        const member = await guild.members.fetch(user.id);
+        
+                        if (!member.roles.cache.has(role.id)) {
+                            return interaction.reply({ content: `${user.tag} does not have the ${role.name} role.`, ephemeral: true });
+                        }
+        
+                        await member.roles.remove(role);
+                        return interaction.reply({ content: `Removed the ${role.name} role from ${member.user.tag}` });
+                    } catch (error) {
+                        return interaction.reply({ content: `There was an error removing the role: ${error}`, ephemeral: true });
+                    }
                 }
-
-                await member.roles.remove(role);
-                return interaction.reply({ content: `Removed the ${role.name} role from ${member.user.tag}` });
-            } catch (error) {
-                return interaction.reply({ content: `There was an error removing the role: ${error}`, ephemeral: true });
+            } else {
+                return interaction.reply('You need to verify your account first. Please verify your account using `/verify`.');
             }
-        }
+        });
     },
 };

@@ -25,13 +25,27 @@ module.exports = {
         .setDescription('Check the bot\'s response time'),
 
     async execute(interaction) {
-        const start = Date.now();
+        const userId = interaction.user.id;
 
-        await interaction.reply('Pinging...');
+        const checkQuery = 'SELECT * FROM verification WHERE user_id = ?';
+        db.query(checkQuery, [userId], async (err, result) => {
+            if (err) {
+                console.error(`[ERROR] Error checking user in the database: ${err}`);
+                return interaction.reply('There was an error processing your request.');
+            }
 
-        const end = Date.now();
+            if (result.length > 0) {
+                const start = Date.now();
 
-        const ping = end - start;
-        interaction.editReply(`pong! ${ping}ms`);
+                await interaction.reply('Pinging...');
+        
+                const end = Date.now();
+        
+                const ping = end - start;
+                interaction.editReply(`pong! ${ping}ms`);
+            } else {
+                return interaction.reply('You need to verify your account first. Please verify your account using `/verify`.');
+            }
+        });
     },
 };
