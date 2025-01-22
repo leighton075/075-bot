@@ -32,11 +32,14 @@ module.exports = {
             option
                 .setName('reason')
                 .setDescription('Reason for ban')
-                .setRequired(false))
-        .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
+                .setRequired(false)),
 
     async execute(interaction) {
         try {
+            if (!interaction.member.permissions.has(PermissionFlagsBits.BanMembers)) {
+                return interaction.reply({ content: "You don't have permission to ban members." });
+            }
+
             const userId = interaction.user.id;
             const username = interaction.user.username;
 

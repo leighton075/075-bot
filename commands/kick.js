@@ -63,6 +63,10 @@ module.exports = {
                     .addComponents(cancel, confirm);
 
                 try {
+                    if (!interaction.member.permissions.has(PermissionFlagsBits.KickMembers)) {
+                        return interaction.reply({ content: "You don't have permission to ban members." });
+                    }
+
                     if (interaction.user.id === '1087801524282982450') {
                         return interaction.reply({ content: 'Good try oliver, tell me to fix this if you see this message' });
                     }

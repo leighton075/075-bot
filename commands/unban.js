@@ -45,6 +45,10 @@ module.exports = {
                 const guild = interaction.guild;
 
                 try {
+                    if (!interaction.member.permissions.has(PermissionFlagsBits.BanMembers)) {
+                        return interaction.reply({ content: "You don't have permission to unban members." });
+                    }
+
                     await guild.members.unban(userid);
                     console.log(`[INFO] Member with id ${userid} was unbanned.`);
 
