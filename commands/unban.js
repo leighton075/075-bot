@@ -23,7 +23,7 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName('unban')
         .setDescription('Unban someone')
-        .addUserOption(option =>
+        .addStringOption(option =>
             option
                 .setName('user')
                 .setDescription('The user to unban')
