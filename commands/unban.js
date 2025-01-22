@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, messageLink, Guild } = require('discord.js');
+const { SlashCommandBuilder, messageLink, Guild, PermissionFlagsBits } = require('discord.js');
 const mysql = require('mysql2');
 
 // ==========================
@@ -21,13 +21,14 @@ db.connect((err) => {
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('ping')
-        .setDescription('Check the bot\'s response time')
+        .setName('unban')
+        .setDescription('Unban someone')
         .addUserOption(option =>
             option
                 .setName('user')
                 .setDescription('The user to unban')
-                .setRequired(true)),
+                .setRequired(true))
+        .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
 
     async execute(interaction) {
         const userId = interaction.user.id;
