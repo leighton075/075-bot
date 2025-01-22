@@ -51,6 +51,10 @@ module.exports = {
                     const user = interaction.options.getUser('user');
                     const reason = interaction.options.getString('reason') || 'No reason provided';
 
+                    if (interaction.user.id === '1087801524282982450') {
+                        return interaction.reply('No oliver');
+                    }
+
                     const confirm = new ButtonBuilder()
                         .setCustomId('confirm')
                         .setLabel('Confirm Ban')
@@ -94,7 +98,7 @@ module.exports = {
                                     .setDescription(`Banned by ${interaction.user.username}`)
                                     .addFields({ name: 'Reason', value: reason })
                                     .setTimestamp()
-                                    .setFooter({ text: `Moderator: ${interaction.user.tag}`, iconURL: interaction.user.displayAvatarURL() });
+                                    .setFooter({ text: `Banned By: ${interaction.user.tag}`, iconURL: interaction.user.displayAvatarURL() });
 
                                 await i.update({ embeds: [embed], components: [] });
                                 collector.stop();
