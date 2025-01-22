@@ -36,7 +36,7 @@ module.exports = {
                 }
 
                 if (result.length > 0) {
-                    const banQuery = 'SELECT username, reason FROM banned';
+                    const banQuery = 'SELECT user_id, username, reason FROM banned';
                     db.query(banQuery, (banQueryErr, banResults) => {
                         if (banQueryErr) {
                             console.error(`[ERROR] Error retrieving banned users: ${banQueryErr}`);
