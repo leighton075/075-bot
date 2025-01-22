@@ -56,7 +56,7 @@ module.exports = {
                         banResults.forEach((user) => {
                             embed.addFields({
                                 name: user.username,
-                                value: `Reason: ${user.reason || 'No reason specified'}`,
+                                value: `Reason: ${user.reason || 'No reason specified'}\nUser ID: ${user.user_id}`,
                                 inline: false,
                             });
                         });
