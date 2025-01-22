@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, messageLink, Guild, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const mysql = require('mysql2');
 
 // ==========================
@@ -25,8 +25,8 @@ module.exports = {
         .setDescription('Unban someone')
         .addStringOption(option =>
             option
-                .setName('user')
-                .setDescription('The user to unban')
+                .setName('userid')
+                .setDescription('The userid of the person to unban')
                 .setRequired(true))
         .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
 
@@ -41,10 +41,17 @@ module.exports = {
             }
 
             if (result.length > 0) {
-                const user = interaction.options.getString('user');
+                const userid = interaction.options.getString('userid');
+                const guild = interaction.guild;
 
-                guild.members.unban(user);
-                console.log(`[INFO] Member with id ${user} was unbanned.`)
+                try {
+                    await guild.members.unban(userid);
+                    console.log(`[INFO] Member with id ${userid} was unbanned.`);
+                    return interaction.reply(`User with ID ${userid} has been unbanned.`);
+                } catch (error) {
+                    console.error('[ERROR] Error unbanning user:', error);
+                    return interaction.reply('There was an error unbanning the user. Please check the user ID and try again.');
+                }
             } else {
                 return interaction.reply('You need to verify your account first. Please verify your account using `/verify`.');
             }
