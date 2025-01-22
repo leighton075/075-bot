@@ -86,15 +86,6 @@ module.exports = {
                             try {
                                 await interaction.guild.members.ban(user, { reason });
 
-                                const insertQuery = 'INSERT INTO banned (user_id, username, reason) VALUES (?, ?, ?)';
-                                db.query(insertQuery, [user.id, user.tag, reason], (insertErr) => {
-                                    if (insertErr) {
-                                        console.error(`[ERROR] Error adding user to banned database: ${insertErr}`);
-                                        return i.update({ content: 'There was an error saving the ban to the database.', components: [] });
-                                    }
-                                    console.log(`[INFO] User ${user.tag} was added to the banned database.`);
-                                });
-
                                 const embed = new EmbedBuilder()
                                     .setColor('#ff0000')
                                     .setTitle(`${user.tag} has been banned.`)
