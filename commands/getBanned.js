@@ -36,33 +36,33 @@ module.exports = {
                 }
 
                 if (result.length > 0) {
-                    const banQuery = 'SELECT user_id, username, reason FROM banned';
-                    db.query(banQuery, (banQueryErr, banResults) => {
-                        if (banQueryErr) {
-                            console.error(`[ERROR] Error retrieving banned users: ${banQueryErr}`);
-                            return interaction.reply({ content: 'An error occurred while retrieving the banned users.', ephemeral: true });
-                        }
+                    interaction.guild.bans.fetch()
+                        .then(bans => {
+                            if (bans.size === 0) {
+                                return interaction.reply({ content: 'No users are currently banned in the guild.', ephemeral: true });
+                            }
 
-                        if (banResults.length === 0) {
-                            return interaction.reply({ content: 'No users are currently banned.', ephemeral: true });
-                        }
+                            const embed = new EmbedBuilder()
+                                .setColor('#ff0000')
+                                .setTitle('Banned Users')
+                                .setDescription('Here is the list of currently banned users:')
+                                .setTimestamp();
 
-                        const embed = new EmbedBuilder()
-                            .setColor('#ff0000')
-                            .setTitle('Banned Users')
-                            .setDescription('Here is the list of currently banned users:')
-                            .setTimestamp();
-
-                        banResults.forEach((user) => {
-                            embed.addFields({
-                                name: user.username,
-                                value: `Reason: ${user.reason || 'No reason specified'}\nUser ID: ${user.user_id}`,
-                                inline: false,
+                            bans.forEach(ban => {
+                                const user = ban.user;
+                                embed.addFields({
+                                    name: user.tag,
+                                    value: `User ID: ${user.id}`,
+                                    inline: false,
+                                });
                             });
-                        });
 
-                        return interaction.reply({ embeds: [embed] });
-                    });
+                            return interaction.reply({ embeds: [embed] });
+                        })
+                        .catch(error => {
+                            console.error(`[ERROR] Error fetching bans: ${error}`);
+                            return interaction.reply({ content: 'An error occurred while fetching the banned users from the guild.', ephemeral: true });
+                        });
                 } else {
                     return interaction.reply({
                         content: 'You need to verify your account first. Please verify your account using `/verify`.',
