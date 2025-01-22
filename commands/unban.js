@@ -47,7 +47,17 @@ module.exports = {
                 try {
                     await guild.members.unban(userid);
                     console.log(`[INFO] Member with id ${userid} was unbanned.`);
-                    return interaction.reply(`User with ID ${userid} has been unbanned.`);
+
+                    const deleteQuery = 'DELETE FROM banned WHERE user_id = ?';
+                    db.query(deleteQuery, [userid], (deleteErr) => {
+                        if (deleteErr) {
+                            console.error(`[ERROR] Error removing user from banned table: ${deleteErr}`);
+                            return interaction.reply('There was an error removing the user from the banned list.');
+                        }
+                        console.log(`[INFO] User with id ${userid} removed from banned database.`);
+                    });
+
+                    return interaction.reply(`User with ID ${userid} has been unbanned and their record has been removed from the banned list.`);
                 } catch (error) {
                     console.error('[ERROR] Error unbanning user:', error);
                     return interaction.reply('There was an error unbanning the user. Please check the user ID and try again.');
