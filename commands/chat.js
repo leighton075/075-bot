@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ActionRowBuilder, ButtonStyle, PermissionFlagsBits } = require('discord.js');
 const mysql = require('mysql2');
 const OpenAi = require('openai');
+require('dotenv').config();
 
 const db = mysql.createConnection({
     host: 'localhost',
