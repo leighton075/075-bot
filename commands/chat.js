@@ -24,7 +24,7 @@ const openai = new OpenAi({
 });
 
 const cooldownMap = new Map();
-const COOLDOWN_TIME = 30000; // 30 seconds in milliseconds
+const COOLDOWN_TIME = 60000; // 30 seconds in milliseconds
 
 function splitMessage(content, maxLength = 2000) {
     const chunks = [];
