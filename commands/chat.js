@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ActionRowBuilder, ButtonStyle, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const mysql = require('mysql2');
 const OpenAi = require('openai');
 require('dotenv').config();
@@ -26,7 +26,7 @@ const openai = new OpenAi({
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('chat')
-        .setDescription('Chat with an ai bot')
+        .setDescription('Chat with an AI bot')
         .addStringOption(option =>
             option
                 .setName('prompt')
@@ -35,20 +35,20 @@ module.exports = {
 
     async execute(interaction) {
         try {
+            // Defer the reply to avoid interaction timeout
             await interaction.deferReply();
-            
+
             if (interaction.channel.id !== '1332214186314436759') {
-                return interaction.reply('Go to the bot-chat channel so I don\'t lose all my money');
+                return interaction.editReply('Go to the bot-chat channel so I don\'t lose all my money');
             }
 
             const userId = interaction.user.id;
-            const username = interaction.user.username;
 
             const checkQuery = 'SELECT * FROM verification WHERE user_id = ?';
             db.query(checkQuery, [userId], async (err, result) => {
                 if (err) {
                     console.error(`[ERROR] Error checking user in the database: ${err}`);
-                    return interaction.reply({ content: 'There was an error processing your request.', ephemeral: true });
+                    return interaction.editReply({ content: 'There was an error processing your request.', ephemeral: true });
                 }
 
                 if (result.length > 0) {
@@ -60,13 +60,14 @@ module.exports = {
                             model: "deepseek-chat",
                         });
 
-                        interaction.reply(completion.choices[0].message.content);
+                        // Edit the deferred reply with the AI's response
+                        await interaction.editReply(completion.choices[0].message.content);
                     } catch (error) {
                         console.error(`[ERROR]:\n${error}`);
-                        return interaction.reply('There was an error processing your prompt.');
+                        await interaction.editReply('There was an error processing your prompt.');
                     }          
                 } else {
-                    return interaction.reply({
+                    await interaction.editReply({
                         content: 'You need to verify your account first. Please verify your account using `/verify`.',
                         ephemeral: true,
                     });
@@ -74,7 +75,7 @@ module.exports = {
             });
         } catch (error) {
             console.error('[ERROR] Unexpected error during chat process:', error);
-            return interaction.reply({ content: 'An unexpected error occurred. Please try again later.', ephemeral: true });
+            await interaction.editReply({ content: 'An unexpected error occurred. Please try again later.', ephemeral: true });
         }
     },
 };
