@@ -5,6 +5,9 @@ const fs = require('node:fs');
 const mysql = require('mysql2');
 require('dotenv').config();
 
+// ==========================
+// Discord Client
+// ==========================
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -14,7 +17,6 @@ const client = new Client({
         GatewayIntentBits.MessageContent,
     ],
 });
-
 
 // ==========================
 // Spotify Login & Auth
