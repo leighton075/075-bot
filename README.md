@@ -20,10 +20,8 @@ Bot is designed for use on a small private server because I don't like Maki. It'
 
 - Fix inventory value api response error
 - Add embeds to anything that needs to look pretty
-- Remove user authentication on kick/ban
-- Add verification to all commands (maybe not admin commands)
-- Unban command
 - Gambling
+- Some other ai stuff
 
 ## Disclaimer
 
