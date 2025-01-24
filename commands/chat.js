@@ -23,9 +23,16 @@ const openai = new OpenAi({
     apiKey: process.env.DEEPSEEK_KEY,
 });
 
-// Cooldown map to track user usage
 const cooldownMap = new Map();
 const COOLDOWN_TIME = 30000; // 30 seconds in milliseconds
+
+function splitMessage(content, maxLength = 2000) {
+    const chunks = [];
+    for (let i = 0; i < content.length; i += maxLength) {
+        chunks.push(content.slice(i, i + maxLength));
+    }
+    return chunks;
+}
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -74,7 +81,18 @@ module.exports = {
                             model: "deepseek-chat",
                         });
 
-                        await interaction.editReply(completion.choices[0].message.content);
+                        const response = completion.choices[0].message.content;
+
+                        // Split the response into chunks of 2000 characters or fewer
+                        const chunks = splitMessage(response);
+
+                        // Send the first chunk as an edit to the deferred reply
+                        await interaction.editReply(chunks[0]);
+
+                        // Send the remaining chunks as follow-up messages
+                        for (let i = 1; i < chunks.length; i++) {
+                            await interaction.followUp({ content: chunks[i] });
+                        }
                     } catch (error) {
                         console.error(`[ERROR]:\n${error}`);
                         await interaction.editReply('There was an error processing your prompt.');
