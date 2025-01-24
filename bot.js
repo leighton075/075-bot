@@ -169,7 +169,7 @@ client.on(Events.MessageCreate, async (message) => {
             .catch((error) => console.error('Failed to delete message:', error));
     }
 
-    if (message.webhookId && message.channel.id === '1331450221435289603') {
+    if (message.webhookId) {
         try {
             await message.publish();
             console.log('Message published!');
