@@ -76,7 +76,7 @@ for (const file of commandFiles) {
         console.error(`Error loading command file ${file}:`, error);
     }
 }
-
+//testing pelase
 // ==========================
 // Execute On Login
 // ==========================
