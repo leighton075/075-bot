@@ -12,9 +12,9 @@ const db = mysql.createConnection({
 
 db.connect((err) => {
     if (err) {
-        console.error(`[ERROR] Error connecting to the database in ban.js: ${err}`);
+        console.error(`[ERROR] Error connecting to the database in chat.js: ${err}`);
     } else {
-        console.log(`[INFO] Connected to the MySQL database in ban.js.`);
+        console.log(`[INFO] Connected to the MySQL database in chat.js.`);
     }
 });
 
@@ -54,7 +54,7 @@ module.exports = {
 
                     try {
                         const completion = await openai.chat.completions.create({
-                            messages: [{ role: "system", content: `Format the answer for a terminal with only plain text. You are primarily used for code development so give a general explanation fro each function. ${prompt}\n` }],
+                            messages: [{ role: "system", content: `You are a chat bot in a discord server. User prompt: ${prompt}` }],
                             model: "deepseek-chat",
                         });
 
