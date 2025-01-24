@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ActionRowBuilder, ButtonStyle, PermissionFlagsBits } = require('discord.js');
 const mysql = require('mysql2');
-import OpenAi from openai;
+const OpenAi = require('openai');
 
 const db = mysql.createConnection({
     host: 'localhost',
@@ -59,7 +59,7 @@ module.exports = {
 
                         interaction.reply(completion.choices[0].message.content);
                     } catch (error) {
-                        console.error(`[ERROR]:\n${errror}`);
+                        console.error(`[ERROR]:\n${error}`);
                         return interaction.reply('There was an error processing your prompt.');
                     }          
                 } else {
