@@ -62,7 +62,7 @@ module.exports = {
             cooldownMap.set(userId, Date.now());
 
             if (interaction.channel.id !== '1332214186314436759') {
-                return interaction.editReply('Go to the bot-chat channel so I don\'t lose all my money');
+                return interaction.editReply('Go to the bot-chat channel so we don\'t get fanfics in general.');
             }
 
             const checkQuery = 'SELECT * FROM verification WHERE user_id = ?';
