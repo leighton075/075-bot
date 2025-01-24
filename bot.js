@@ -3,6 +3,7 @@ const { clientId, guildId, token } = require('./config.json');
 const SpotifyWebApi = require('spotify-web-api-node');
 const fs = require('node:fs');
 const mysql = require('mysql2');
+const { channel } = require('node:diagnostics_channel');
 require('dotenv').config();
 
 // ==========================
@@ -162,13 +163,19 @@ client.on(Events.MessageCreate, async (message) => {
     const linkChannel = '1319595051160047627';
     if (message.author.bot) return;
 
-    if (
-        message.channel.id === linkChannel &&
-        !message.content.includes('https://photos.app.goo.gl/')
-    ) {
+    if (message.channel.id === linkChannel && !message.content.includes('https://photos.app.goo.gl/')) {
         message.delete()
             .then(() => console.log(`Deleted message from ${message.author.tag}`))
             .catch((error) => console.error('Failed to delete message:', error));
+    }
+
+    if (message.webhookId && message.channel.id === '1331450221435289603') {
+        try {
+            await message.publish();
+            console.log('Message published!');
+        } catch (error) {
+          console.error('Error publishing message:', error);
+        }
     }
 });
 
