@@ -35,6 +35,8 @@ module.exports = {
 
     async execute(interaction) {
         try {
+            await interaction.deferReply();
+            
             if (interaction.channel.id !== '1332214186314436759') {
                 return interaction.reply('Go to the bot-chat channel so I don\'t lose all my money');
             }
