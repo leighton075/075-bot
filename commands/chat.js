@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ActionRowBuilder, ButtonStyle, PermissionFlagsBits } = require('discord.js');
 const mysql = require('mysql2');
-import OpenAi from "openai";
+const OpenAi = require('openai');
 
 const db = mysql.createConnection({
     host: 'localhost',
