@@ -18,7 +18,8 @@
     "formidable": "^3.5.2",
     "mysql2": "^3.12.0",
     "openai": "^4.80.0",
-    "puppeteer": "^23.11.1",
+    "ow": "^2.0.0",
+    "puppeteer": "^24.1.1",
     "sharp": "^0.33.5",
     "spotify-web-api-node": "^5.0.2",
     "undici": "^7.2.1"
