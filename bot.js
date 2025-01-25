@@ -4,49 +4,6 @@ const SpotifyWebApi = require('spotify-web-api-node');
 const fs = require('node:fs');
 const mysql = require('mysql2');
 require('dotenv').config();
-const express = require('express');
-
-// ==========================
-// mySQL Setup
-// ==========================
-const db = mysql.createConnection({
-    host: 'localhost',
-    user: process.env.SQL_USERNAME,
-    password: process.env.SQL_PASSWORD,
-    database: 'bot_verification'
-});
-
-db.connect((err) => {
-    if (err) {
-        console.error(`[ERROR] Error connecting to the database: ${err}`);
-    } else {
-        console.log(`[INFO] Connected to the mySQL database.`);
-    }
-});
-
-// ==========================
-// Express
-// ==========================
-const apiApp = express();
-const apiPort = 3001;
-const checkQuery = 'SELECT command_name, usage_count FROM command_usage';
-db.query(checkQuery, (results) => {
-    console.log(results);
-});
-apiApp.get('/command-count', (req, res) => {
-    const query = 'SELECT command_name, usage_count FROM command_usage';
-    db.query(query, (err, results) => {
-        if (err) {
-            res.status(500).json({ error: 'Failed to fetch command count' });
-        } else {
-            res.json(results);
-        }
-    });
-});
-
-apiApp.listen(apiPort, () => {
-    console.log(`API running at http://localhost:${apiPort}`);
-});
 
 // ==========================
 // Discord Client
@@ -81,6 +38,24 @@ async function authenticateSpotify() {
         console.error('Error getting Spotify access token:', err);
     }
 }
+
+// ==========================
+// mySQL Setup
+// ==========================
+const db = mysql.createConnection({
+    host: 'localhost',
+    user: process.env.SQL_USERNAME,
+    password: process.env.SQL_PASSWORD,
+    database: 'bot_verification'
+});
+
+db.connect((err) => {
+    if (err) {
+        console.error(`[ERROR] Error connecting to the database: ${err}`);
+    } else {
+        console.log(`[INFO] Connected to the mySQL database.`);
+    }
+});
 
 // ==========================
 // Register Commands
@@ -173,17 +148,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
 
     try {
-        const query = `
-            INSERT INTO command_usage (command_name, usage_count)
-            VALUES (?, 1)
-            ON DUPLICATE KEY UPDATE usage_count = usage_count + 1;
-        `;
-        db.query(query, [interaction.commandName], (err) => {
-            if (err) {
-                console.error(`Error updating command usage for ${interaction.commandName}:`, err);
-            }
-        });
-
         await command.execute(interaction, client);
     } catch (error) {
         console.error(`Error executing command ${interaction.commandName}:`, error);
