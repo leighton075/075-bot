@@ -166,6 +166,16 @@ client.on(Events.MessageCreate, async (message) => {
     const linkChannel = '1319595051160047627';
     if (message.author.bot) return;
 
+    // Log all messages in the webhook channel for debugging
+    if (message.channel.id === webhookChannelId) {
+        console.log(`Message detected in webhook channel:`, {
+            id: message.id,
+            content: message.content,
+            author: message.author.tag,
+            webhookId: message.webhookId,
+        });
+    }
+
     // Handle link channel moderation
     if (message.channel.id === linkChannel && !message.content.includes('https://photos.app.goo.gl/')) {
         message.delete()
@@ -289,6 +299,3 @@ client.on(Events.GuildMemberRemove, async (member) => {
 });
 
 client.login(token);
-//
-//
-//
