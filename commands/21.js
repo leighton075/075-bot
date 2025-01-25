@@ -41,6 +41,9 @@ module.exports = {
                     //
                     ///
                     ///
+                    //
+                    //
+                    //
                     if (interaction.user.id === '1087801524282982450') {
                         return interaction.reply('No oliver');
                     }
