@@ -37,7 +37,7 @@ module.exports = {
                 }
 
                 if (result.length > 0) {
-                    //testing again, again
+                    //testing again, again, again
                     if (interaction.user.id === '1087801524282982450') {
                         return interaction.reply('No oliver');
                     }
