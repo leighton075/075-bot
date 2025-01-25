@@ -44,11 +44,7 @@ module.exports = {
                     //
                     //
                     //
-                    //
-                    //
-                    //
-                    //
-
+                    
                     const confirm = new ButtonBuilder()
                         .setCustomId('confirm')
                         .setLabel('Confirm Ban')
