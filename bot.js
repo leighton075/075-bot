@@ -317,7 +317,7 @@ app.post('/github-webhook', async (req, res) => {
             const message = `🎉 **Update Detected** 🎉\nRepository: **${repoName}**\nAuthor: **${author}**\nCommit Message: **${commitMessage}**\nLines Added: **${added}**\nLines Removed: **${removed}**\nModified Files:\n\`\`\`\n${modifiedFiles}\n\`\`\``;
 
             // Send the message to a specific Discord channel
-            const githubChannel = client.channels.cache.get('YOUR_GITHUB_CHANNEL_ID'); // Replace with your channel ID
+            const githubChannel = client.channels.cache.get('1319595096244752494');
             if (githubChannel) {
                 if (lastGitHubMessageId) {
                     try {
