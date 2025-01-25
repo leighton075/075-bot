@@ -7,6 +7,24 @@ require('dotenv').config();
 const express = require('express');
 
 // ==========================
+// mySQL Setup
+// ==========================
+const db = mysql.createConnection({
+    host: 'localhost',
+    user: process.env.SQL_USERNAME,
+    password: process.env.SQL_PASSWORD,
+    database: 'bot_verification'
+});
+
+db.connect((err) => {
+    if (err) {
+        console.error(`[ERROR] Error connecting to the database: ${err}`);
+    } else {
+        console.log(`[INFO] Connected to the mySQL database.`);
+    }
+});
+
+// ==========================
 // Express
 // ==========================
 const apiApp = express();
@@ -63,24 +81,6 @@ async function authenticateSpotify() {
         console.error('Error getting Spotify access token:', err);
     }
 }
-
-// ==========================
-// mySQL Setup
-// ==========================
-const db = mysql.createConnection({
-    host: 'localhost',
-    user: process.env.SQL_USERNAME,
-    password: process.env.SQL_PASSWORD,
-    database: 'bot_verification'
-});
-
-db.connect((err) => {
-    if (err) {
-        console.error(`[ERROR] Error connecting to the database: ${err}`);
-    } else {
-        console.log(`[INFO] Connected to the mySQL database.`);
-    }
-});
 
 // ==========================
 // Register Commands
