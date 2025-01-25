@@ -285,5 +285,3 @@ client.on(Events.GuildMemberRemove, async (member) => {
 });
 
 client.login(token);
-//
-//
