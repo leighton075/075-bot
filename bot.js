@@ -2,7 +2,7 @@ const { Client, GatewayIntentBits, Collection, AuditLogEvent, EmbedBuilder, Even
 const { clientId, guildId, token } = require('./config.json');
 const SpotifyWebApi = require('spotify-web-api-node');
 const fs = require('node:fs');
-const mysql = require('mysql2');
+const path = require('path');
 require('dotenv').config();
 
 // ==========================
@@ -40,22 +40,29 @@ async function authenticateSpotify() {
 }
 
 // ==========================
-// mySQL Setup
+// JSON File Setup
 // ==========================
-const db = mysql.createConnection({
-    host: 'localhost',
-    user: process.env.SQL_USERNAME,
-    password: process.env.SQL_PASSWORD,
-    database: 'bot_verification'
-});
+const dataFilePath = path.join(__dirname, 'commandUsage.json');
 
-db.connect((err) => {
-    if (err) {
-        console.error(`[ERROR] Error connecting to the database: ${err}`);
-    } else {
-        console.log(`[INFO] Connected to the mySQL database.`);
+// Helper function to read the JSON file
+const readData = () => {
+    try {
+        const data = fs.readFileSync(dataFilePath, 'utf8');
+        return JSON.parse(data);
+    } catch (err) {
+        console.error('Error reading JSON file:', err);
+        return [];
     }
-});
+};
+
+// Helper function to write to the JSON file
+const writeData = (data) => {
+    try {
+        fs.writeFileSync(dataFilePath, JSON.stringify(data, null, 2));
+    } catch (err) {
+        console.error('Error writing to JSON file:', err);
+    }
+};
 
 // ==========================
 // Register Commands
@@ -148,6 +155,19 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
 
     try {
+        // Update command usage in JSON file
+        const commandUsage = readData();
+        const commandName = interaction.commandName;
+        const commandEntry = commandUsage.find(cmd => cmd.command_name === commandName);
+
+        if (commandEntry) {
+            commandEntry.usage_count += 1;
+        } else {
+            commandUsage.push({ command_name: commandName, usage_count: 1 });
+        }
+
+        writeData(commandUsage);
+
         await command.execute(interaction, client);
     } catch (error) {
         console.error(`Error executing command ${interaction.commandName}:`, error);
