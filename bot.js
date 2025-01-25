@@ -4,6 +4,7 @@ const SpotifyWebApi = require('spotify-web-api-node');
 const fs = require('node:fs');
 const mysql = require('mysql2');
 require('dotenv').config();
+const express = require('express');
 
 // ==========================
 // Express
