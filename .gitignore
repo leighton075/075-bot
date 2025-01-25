@@ -31,3 +31,6 @@ eslint.config.js
 
 # Clear all commands code
 clearCommands.txt
+
+# Command Counter
+commandUsage.json

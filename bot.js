@@ -2,55 +2,9 @@ const { Client, GatewayIntentBits, Collection, AuditLogEvent, EmbedBuilder, Even
 const { clientId, guildId, token } = require('./config.json');
 const SpotifyWebApi = require('spotify-web-api-node');
 const fs = require('node:fs');
-const path = require('path');
+const mysql = require('mysql2');
 require('dotenv').config();
 
-// ==========================
-// Web Socket Server
-// ==========================
-const { WebSocketServer } = require('ws');
-const wss = new WebSocketServer({ port: 8080 });
-
-wss.on('connection', (ws) => {
-    console.log('New client connected');
-  
-    // Send initial command usage data
-    const commandUsage = readData();
-    ws.send(JSON.stringify(commandUsage));
-  
-    // Listen for messages from the client (optional)
-    ws.on('message', (message) => {
-      console.log(`Received message: ${message}`);
-    });
-  
-    // Handle client disconnect
-    ws.on('close', () => {
-      console.log('Client disconnected');
-    });
-  });
-
-const broadcastCommandUsage = () => {
-    const commandUsage = readData();
-    wss.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify(commandUsage));
-        }
-    });
-};
-
-const updateCommandUsage = (commandName) => {
-    const commandUsage = readData();
-    const commandEntry = commandUsage.find(cmd => cmd.command_name === commandName);
-  
-    if (commandEntry) {
-      commandEntry.usage_count += 1;
-    } else {
-      commandUsage.push({ command_name: commandName, usage_count: 1 });
-    }
-  
-    writeData(commandUsage);
-    broadcastCommandUsage(); // Broadcast the updated data
-};
 // ==========================
 // Discord Client
 // ==========================
@@ -86,29 +40,22 @@ async function authenticateSpotify() {
 }
 
 // ==========================
-// JSON File Setup
+// mySQL Setup
 // ==========================
-const dataFilePath = path.join(__dirname, 'commandUsage.json');
+const db = mysql.createConnection({
+    host: 'localhost',
+    user: process.env.SQL_USERNAME,
+    password: process.env.SQL_PASSWORD,
+    database: 'bot_verification'
+});
 
-// Helper function to read the JSON file
-const readData = () => {
-    try {
-        const data = fs.readFileSync(dataFilePath, 'utf8');
-        return JSON.parse(data);
-    } catch (err) {
-        console.error('Error reading JSON file:', err);
-        return [];
+db.connect((err) => {
+    if (err) {
+        console.error(`[ERROR] Error connecting to the database: ${err}`);
+    } else {
+        console.log(`[INFO] Connected to the mySQL database.`);
     }
-};
-
-// Helper function to write to the JSON file
-const writeData = (data) => {
-    try {
-        fs.writeFileSync(dataFilePath, JSON.stringify(data, null, 2));
-    } catch (err) {
-        console.error('Error writing to JSON file:', err);
-    }
-};
+});
 
 // ==========================
 // Register Commands
@@ -194,6 +141,7 @@ client.once('ready', async () => {
 // Command Used
 // ==========================
 client.on(Events.InteractionCreate, async (interaction) => {
+    
     if (!interaction.isChatInputCommand()) return;
     const command = commands.get(interaction.commandName);
     if (!command) {
@@ -201,19 +149,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
 
     try {
-        // Update command usage in JSON file
-        const commandUsage = readData();
-        const commandName = interaction.commandName;
-        const commandEntry = commandUsage.find(cmd => cmd.command_name === commandName);
-
-        if (commandEntry) {
-            commandEntry.usage_count += 1;
-        } else {
-            commandUsage.push({ command_name: commandName, usage_count: 1 });
-        }
-
-        writeData(commandUsage);
-
         await command.execute(interaction, client);
     } catch (error) {
         console.error(`Error executing command ${interaction.commandName}:`, error);
