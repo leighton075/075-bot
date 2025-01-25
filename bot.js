@@ -6,6 +6,26 @@ const mysql = require('mysql2');
 require('dotenv').config();
 
 // ==========================
+// Express
+// ==========================
+const apiApp = express();
+const apiPort = 3001;
+apiApp.get('/command-count', (req, res) => {
+    const query = 'SELECT command_name, usage_count FROM command_usage';
+    db.query(query, (err, results) => {
+        if (err) {
+            res.status(500).json({ error: 'Failed to fetch command count' });
+        } else {
+            res.json(results);
+        }
+    });
+});
+
+apiApp.listen(apiPort, () => {
+    console.log(`API running at http://localhost:${apiPort}`);
+});
+
+// ==========================
 // Discord Client
 // ==========================
 const client = new Client({
@@ -140,18 +160,7 @@ client.once('ready', async () => {
 // ==========================
 // Command Used
 // ==========================
-let commandCount = 0;
-try {
-const data = fs.readFileSync('commandCount.json');
-commandCount = JSON.parse(data).count;
-} catch (err) {
-console.log('No command count file found, starting from 0.');
-}
 client.on(Events.InteractionCreate, async (interaction) => {
-    commandCount++;
-    fs.writeFileSync('commandCount.json', JSON.stringify({ count: commandCount })); // Save the updated count
-    console.log(`Command count updated: ${commandCount}`);
-    
     if (!interaction.isChatInputCommand()) return;
     const command = commands.get(interaction.commandName);
     if (!command) {
@@ -159,6 +168,17 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
 
     try {
+        const query = `
+            INSERT INTO command_usage (command_name, usage_count)
+            VALUES (?, 1)
+            ON DUPLICATE KEY UPDATE usage_count = usage_count + 1;
+        `;
+        db.query(query, [interaction.commandName], (err) => {
+            if (err) {
+                console.error(`Error updating command usage for ${interaction.commandName}:`, err);
+            }
+        });
+
         await command.execute(interaction, client);
     } catch (error) {
         console.error(`Error executing command ${interaction.commandName}:`, error);
