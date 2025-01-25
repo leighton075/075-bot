@@ -11,6 +11,10 @@ const express = require('express');
 // ==========================
 const apiApp = express();
 const apiPort = 3001;
+const checkQuery = 'SELECT command_name, usage_count FROM command_usage';
+db.query(checkQuery, (results) => {
+    console.log(results);
+});
 apiApp.get('/command-count', (req, res) => {
     const query = 'SELECT command_name, usage_count FROM command_usage';
     db.query(query, (err, results) => {
