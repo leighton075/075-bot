@@ -1,6 +1,6 @@
 const express = require('express');
 const axios = require('axios');
-const { exec } = require('child_process'); // Import exec
+require('dotenv').config();
 
 const app = express();
 const PORT = 5000;
@@ -9,12 +9,18 @@ const PORT = 5000;
 const DISCORD_WEBHOOK_URLS = [
     'https://discord.com/api/webhooks/1332244290306572308/BMUuJJG8satOVbCjB1Jx9Om6AyWdtUFGK5rQp-6P1Kuts7XXnXlJJNAJJ49_F0tvpa4H',
     'https://discord.com/api/webhooks/1332269330506842183/JUbso40Ss_nrymJyLBgFbiMYM2JwoTBetzIKpNvJ2IeE9EkpriYWOHZmpzb-JyL_67mG',
-    // Add more webhook URLs as needed
 ];
+
+// GitHub API details
+const GITHUB_API_TOKEN = process.env.GITHUB_TOKEN; // Replace with your GitHub token
+const GITHUB_API_URL = 'https://api.github.com';
+
+// Store the last sent message IDs for each webhook
+const lastMessageIds = new Map();
 
 app.use(express.json());
 
-app.post('/webhook', (req, res) => {
+app.post('/webhook', async (req, res) => {
     const payload = req.body;
 
     // Check if the payload has the expected structure
@@ -27,65 +33,89 @@ app.post('/webhook', (req, res) => {
         const commitMessage = payload.head_commit.message || 'No commit message';
         const author = payload.head_commit.author?.name || 'Unknown Author';
         const repoName = payload.repository.name || 'Unknown Repository';
-
-        // Get the commit hash to use for git diff
         const commitHash = payload.head_commit.id;
 
-        // Fetch the diff stats (added/removed lines)
-        getDiffStats(commitHash)
-            .then(diffStats => {
-                const added = diffStats.added || 0;
-                const removed = diffStats.removed || 0;
+        try {
+            // Fetch the commit details from the GitHub API
+            const commitDetails = await fetchCommitDetails(payload.repository.full_name, commitHash);
 
-                // Create the Discord message
-                const message = `🎉 **Update Detected** 🎉\nRepository: **${repoName}**\nAuthor: **${author}**\nCommit Message: **${commitMessage}**\nLines Added: **${added}**\nLines Removed: **${removed}**`;
+            // Get the number of lines added and removed
+            const added = commitDetails.stats?.additions || 0;
+            const removed = commitDetails.stats?.deletions || 0;
 
-                // Send the message to all Discord webhooks
-                DISCORD_WEBHOOK_URLS.forEach(webhookUrl => {
-                    axios.post(webhookUrl, { content: message })
-                        .then(() => {
-                            console.log(`Message sent to Discord webhook: ${webhookUrl}`);
-                        })
-                        .catch(error => {
-                            console.error(`Error sending message to Discord webhook (${webhookUrl}):`, error);
-                        });
-                });
+            // Get the list of modified files
+            const modifiedFiles = commitDetails.files
+                ?.filter(file => file.status === 'modified') // Filter only modified files
+                .map(file => file.filename) // Extract filenames
+                .join('\n') || 'No files modified'; // Join filenames with newlines
 
-                // Send a success response
-                res.status(200).send('Webhook received');
-            })
-            .catch(error => {
-                console.error('Error getting diff stats:', error);
-                res.status(500).send('Error processing webhook');
-            });
+            // Create the Discord message
+            const message = `🎉 **Update Detected** 🎉\nRepository: **${repoName}**\nAuthor: **${author}**\nCommit Message: **${commitMessage}**\nLines Added: **${added}**\nLines Removed: **${removed}**\nModified Files:\n\`\`\`\n${modifiedFiles}\n\`\`\``;
+
+            // Send the message to all Discord webhooks
+            for (const webhookUrl of DISCORD_WEBHOOK_URLS) {
+                try {
+                    // Delete the previous message if it exists
+                    const lastMessageId = lastMessageIds.get(webhookUrl);
+                    if (lastMessageId) {
+                        console.log(`Attempting to delete message ${lastMessageId} for webhook: ${webhookUrl}`);
+                        await deleteMessage(webhookUrl, lastMessageId);
+                        console.log(`Deleted previous message for webhook: ${webhookUrl}`);
+                    }
+
+                    // Send the new message
+                    const response = await axios.post(webhookUrl, { content: message });
+                    const newMessageId = response.data.id;
+
+                    // Update the last sent message ID
+                    lastMessageIds.set(webhookUrl, newMessageId);
+                    console.log(`Message sent to Discord webhook: ${webhookUrl}`);
+                    console.log(`New message ID: ${newMessageId}`);
+                } catch (error) {
+                    console.error(`Error sending message to Discord webhook (${webhookUrl}):`, error);
+                    if (error.response) {
+                        console.error('Response data:', error.response.data);
+                        console.error('Response headers:', error.response.headers);
+                    }
+                }
+            }
+
+            // Send a success response
+            res.status(200).send('Webhook received');
+        } catch (error) {
+            console.error('Error fetching commit details:', error);
+            res.status(500).send('Error processing webhook');
+        }
     } else {
         res.status(200).send('Not a push to the main branch');
     }
 });
 
-// Function to get the diff stats (added/removed lines) for a commit
-function getDiffStats(commitHash) {
-    return new Promise((resolve, reject) => {
-        // Run git diff for the given commit hash
-        exec(`git diff --stat ${commitHash}^..${commitHash}`, (err, stdout, stderr) => {
-            if (err || stderr) {
-                console.error('Error executing git diff:', err || stderr);
-                reject('Error fetching diff stats');
-            } else {
-                console.log('Git diff output:', stdout); // Log the output
-                const stats = stdout.split('\n').filter(line => line.includes('files changed'));
-                if (stats.length > 0) {
-                    const statsArr = stats[0].match(/(\d+) insertions\(\+\), (\d+) deletions\(\-\)/);
-                    const added = statsArr ? parseInt(statsArr[1]) : 0;
-                    const removed = statsArr ? parseInt(statsArr[2]) : 0;
-                    resolve({ added, removed });
-                } else {
-                    console.error('No diff stats found in output:', stdout);
-                    reject('No diff stats found');
-                }
-            }
-        });
-    });
+// Function to fetch commit details from the GitHub API
+async function fetchCommitDetails(repoFullName, commitHash) {
+    const url = `${GITHUB_API_URL}/repos/${repoFullName}/commits/${commitHash}`;
+    const headers = {
+        Authorization: `Bearer ${GITHUB_API_TOKEN}`,
+        Accept: 'application/vnd.github.v3+json',
+    };
+
+    const response = await axios.get(url, { headers });
+    return response.data;
+}
+
+// Function to delete a message using the Discord API
+async function deleteMessage(webhookUrl, messageId) {
+    const deleteUrl = `${webhookUrl}/messages/${messageId}`;
+    try {
+        await axios.delete(deleteUrl);
+    } catch (error) {
+        console.error(`Error deleting message ${messageId}:`, error);
+        if (error.response) {
+            console.error('Response data:', error.response.data);
+            console.error('Response headers:', error.response.headers);
+        }
+        throw error;
+    }
 }
 
 app.listen(PORT, '0.0.0.0', () => {

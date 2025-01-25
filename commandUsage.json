@@ -1,4 +1,14 @@
 [
-    { "command_name": "ping", "usage_count": 10 },
-    { "command_name": "help", "usage_count": 5 }
-  ]
+  {
+    "command_name": "ping",
+    "usage_count": 10
+  },
+  {
+    "command_name": "help",
+    "usage_count": 5
+  },
+  {
+    "command_name": "nuke",
+    "usage_count": 1
+  }
+]
