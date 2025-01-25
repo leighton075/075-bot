@@ -77,22 +77,11 @@ module.exports = {
 
                     try {
                         const completion = await openai.chat.completions.create({
-                            messages: [{ role: "system", content: `You are a chat bot in a discord server. Make your response have a max of 4000 characters. User prompt: ${prompt}` }],
+                            messages: [{ role: "system", content: `You are a chat bot in a discord server. Make your response have a max of 2000 characters. User prompt: ${prompt}` }],
                             model: "deepseek-chat",
                         });
+                        await interaction.followUp({ content: completion.choices[0].message.content });
 
-                        const response = completion.choices[0].message.content;
-
-                        // Split the response into chunks of 2000 characters or fewer
-                        const chunks = splitMessage(response);
-
-                        // Send the first chunk as an edit to the deferred reply
-                        await interaction.editReply(chunks[0]);
-
-                        // Send the remaining chunks as follow-up messages
-                        for (let i = 1; i < chunks.length; i++) {
-                            await interaction.followUp({ content: chunks[i] });
-                        }
                     } catch (error) {
                         console.error(`[ERROR]:\n${error}`);
                         await interaction.editReply('There was an error processing your prompt.');
