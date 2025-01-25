@@ -140,7 +140,18 @@ client.once('ready', async () => {
 // ==========================
 // Command Used
 // ==========================
+let commandCount = 0;
+try {
+const data = fs.readFileSync('commandCount.json');
+commandCount = JSON.parse(data).count;
+} catch (err) {
+console.log('No command count file found, starting from 0.');
+}
 client.on(Events.InteractionCreate, async (interaction) => {
+    commandCount++;
+    fs.writeFileSync('commandCount.json', JSON.stringify({ count: commandCount })); // Save the updated count
+    console.log(`Command count updated: ${commandCount}`);
+    
     if (!interaction.isChatInputCommand()) return;
     const command = commands.get(interaction.commandName);
     if (!command) {
