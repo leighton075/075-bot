@@ -174,7 +174,7 @@ client.on(Events.MessageCreate, async (message) => {
     }
 
     // Handle webhook messages in the specified channel
-    if (message.channel.id === webhookChannelId && message.webhookId) {
+    if (message.channel.id === webhookChannelId && message.user.id === '1332269330506842183') {
         try {
             // Add the new message ID to the array
             webhookMessages.push(message.id);
