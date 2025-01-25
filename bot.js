@@ -158,9 +158,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
 // ==========================
 // Message Sent
 // ==========================
-const webhookChannelId = '1319595096244752494';
-const maxMessagesToKeep = 1; // Keep only the last 2 messages
-const webhookMessages = []; // Store the last 2 message IDs
+const webhookChannelId = '1319595096244752494'; // Replace with your webhook channel ID
+const maxMessagesToKeep = 1; // Keep only the last message
+const webhookMessages = []; // Store the last message IDs
 
 client.on(Events.MessageCreate, async (message) => {
     const linkChannel = '1319595051160047627';
@@ -174,20 +174,24 @@ client.on(Events.MessageCreate, async (message) => {
     }
 
     // Handle webhook messages in the specified channel
-    if (message.channel.id === webhookChannelId && message.user.id === '1332269330506842183') {
+    if (message.channel.id === webhookChannelId && message.webhookId) {
         try {
+            console.log(`New webhook message detected: ${message.id}`);
+
             // Add the new message ID to the array
             webhookMessages.push(message.id);
 
-            // If there are more than 2 messages, delete the oldest one
+            // If there are more than the allowed messages, delete the oldest one
             if (webhookMessages.length > maxMessagesToKeep) {
+                const oldestMessageId = webhookMessages.shift(); // Remove the oldest message ID
+                console.log(`Attempting to delete oldest message: ${oldestMessageId}`);
+
                 const oldestMessage = await message.channel.messages.fetch(oldestMessageId);
                 await oldestMessage.delete();
                 console.log(`Deleted older webhook message: ${oldestMessageId}`);
-                const oldestMessageId = webhookMessages.shift(); // Remove the oldest message ID
             }
 
-            console.log(`Tracked webhook message: ${message.id}`);
+            console.log(`Tracked webhook messages: ${webhookMessages.join(', ')}`);
         } catch (error) {
             console.error('Error handling webhook message:', error);
         }
