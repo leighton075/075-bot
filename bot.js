@@ -2,6 +2,7 @@ const { Client, GatewayIntentBits, Collection, AuditLogEvent, EmbedBuilder, Even
 const { clientId, guildId, token } = require('./config.json');
 const SpotifyWebApi = require('spotify-web-api-node');
 const fs = require('node:fs');
+const path = require('path');
 const mysql = require('mysql2');
 require('dotenv').config();
 
@@ -77,6 +78,47 @@ for (const file of commandFiles) {
 }
 
 // ==========================
+// Count Commands
+// ==========================
+const commandUsagePath = path.join(__dirname, 'commandUsage.json');
+
+const readCommandUsage = () => {
+  try {
+    const data = fs.readFileSync(commandUsagePath, 'utf8');
+    return JSON.parse(data);
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      return [];
+    }
+    console.error('Error reading commandUsage.json:', err);
+    return [];
+  }
+};
+
+// Helper function to write to the JSON file
+const writeCommandUsage = (data) => {
+  try {
+    fs.writeFileSync(commandUsagePath, JSON.stringify(data, null, 2));
+  } catch (err) {
+    console.error('Error writing to commandUsage.json:', err);
+  }
+};
+
+// Function to update command usage
+const updateCommandUsage = (commandName) => {
+  const commandUsage = readCommandUsage();
+  const commandEntry = commandUsage.find(cmd => cmd.command_name === commandName);
+
+  if (commandEntry) {
+    commandEntry.usage_count += 1;
+  } else {
+    commandUsage.push({ command_name: commandName, usage_count: 1 });
+  }
+
+  writeCommandUsage(commandUsage);
+};
+
+// ==========================
 // Execute On Login
 // ==========================
 client.once('ready', async () => {
@@ -141,18 +183,20 @@ client.once('ready', async () => {
 // Command Used
 // ==========================
 client.on(Events.InteractionCreate, async (interaction) => {
-    
     if (!interaction.isChatInputCommand()) return;
     const command = commands.get(interaction.commandName);
     if (!command) {
-        return interaction.reply({ content: 'Unknown command!', ephemeral: true });
+      return interaction.reply({ content: 'Unknown command!', ephemeral: true });
     }
-
+  
     try {
-        await command.execute(interaction, client);
+      // Update command usage
+      updateCommandUsage(interaction.commandName);
+  
+      await command.execute(interaction, client);
     } catch (error) {
-        console.error(`Error executing command ${interaction.commandName}:`, error);
-        interaction.reply({ content: 'An error occurred while executing this command.', ephemeral: true });
+      console.error(`Error executing command ${interaction.commandName}:`, error);
+      interaction.reply({ content: 'An error occurred while executing this command.', ephemeral: true });
     }
 });
 
