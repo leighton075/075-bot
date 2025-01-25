@@ -159,7 +159,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 // Message Sent
 // ==========================
 const webhookChannelId = '1319595096244752494';
-const maxMessagesToKeep = 2; // Keep only the last 2 messages
+const maxMessagesToKeep = 1; // Keep only the last 2 messages
 const webhookMessages = []; // Store the last 2 message IDs
 
 client.on(Events.MessageCreate, async (message) => {
@@ -181,10 +181,10 @@ client.on(Events.MessageCreate, async (message) => {
 
             // If there are more than 2 messages, delete the oldest one
             if (webhookMessages.length > maxMessagesToKeep) {
-                const oldestMessageId = webhookMessages.shift(); // Remove the oldest message ID
                 const oldestMessage = await message.channel.messages.fetch(oldestMessageId);
                 await oldestMessage.delete();
                 console.log(`Deleted older webhook message: ${oldestMessageId}`);
+                const oldestMessageId = webhookMessages.shift(); // Remove the oldest message ID
             }
 
             console.log(`Tracked webhook message: ${message.id}`);
