@@ -6,6 +6,52 @@ const path = require('path');
 require('dotenv').config();
 
 // ==========================
+// Web Socket Server
+// ==========================
+const { WebSocketServer } = require('ws');
+const wss = new WebSocketServer({ port: 8080 });
+
+wss.on('connection', (ws) => {
+    console.log('New client connected');
+  
+    // Send initial command usage data
+    const commandUsage = readData();
+    ws.send(JSON.stringify(commandUsage));
+  
+    // Listen for messages from the client (optional)
+    ws.on('message', (message) => {
+      console.log(`Received message: ${message}`);
+    });
+  
+    // Handle client disconnect
+    ws.on('close', () => {
+      console.log('Client disconnected');
+    });
+  });
+
+const broadcastCommandUsage = () => {
+    const commandUsage = readData();
+    wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify(commandUsage));
+        }
+    });
+};
+
+const updateCommandUsage = (commandName) => {
+    const commandUsage = readData();
+    const commandEntry = commandUsage.find(cmd => cmd.command_name === commandName);
+  
+    if (commandEntry) {
+      commandEntry.usage_count += 1;
+    } else {
+      commandUsage.push({ command_name: commandName, usage_count: 1 });
+    }
+  
+    writeData(commandUsage);
+    broadcastCommandUsage(); // Broadcast the updated data
+};
+// ==========================
 // Discord Client
 // ==========================
 const client = new Client({
