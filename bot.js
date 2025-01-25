@@ -1,17 +1,9 @@
-const express = require('express');
-const axios = require('axios');
 const { Client, GatewayIntentBits, Collection, AuditLogEvent, EmbedBuilder, Events } = require('discord.js');
 const { clientId, guildId, token } = require('./config.json');
 const SpotifyWebApi = require('spotify-web-api-node');
 const fs = require('node:fs');
 const mysql = require('mysql2');
 require('dotenv').config();
-
-// ==========================
-// Express Server for GitHub Webhooks
-// ==========================
-const app = express();
-const PORT = 5000;
 
 // ==========================
 // Discord Client
@@ -166,22 +158,38 @@ client.on(Events.InteractionCreate, async (interaction) => {
 // ==========================
 // Message Sent
 // ==========================
+const webhookChannelId = '1319595096244752494';
+const maxMessagesToKeep = 2; // Keep only the last 2 messages
+const webhookMessages = []; // Store the last 2 message IDs
+
 client.on(Events.MessageCreate, async (message) => {
     const linkChannel = '1319595051160047627';
     if (message.author.bot) return;
 
+    // Handle link channel moderation
     if (message.channel.id === linkChannel && !message.content.includes('https://photos.app.goo.gl/')) {
         message.delete()
             .then(() => console.log(`Deleted message from ${message.author.tag}`))
             .catch((error) => console.error('Failed to delete message:', error));
     }
 
-    if (message.webhookId) {
+    // Handle webhook messages in the specified channel
+    if (message.channel.id === webhookChannelId && message.webhookId) {
         try {
-            await message.publish();
-            console.log('Message published!');
+            // Add the new message ID to the array
+            webhookMessages.push(message.id);
+
+            // If there are more than 2 messages, delete the oldest one
+            if (webhookMessages.length > maxMessagesToKeep) {
+                const oldestMessageId = webhookMessages.shift(); // Remove the oldest message ID
+                const oldestMessage = await message.channel.messages.fetch(oldestMessageId);
+                await oldestMessage.delete();
+                console.log(`Deleted older webhook message: ${oldestMessageId}`);
+            }
+
+            console.log(`Tracked webhook message: ${message.id}`);
         } catch (error) {
-          console.error('Error publishing message:', error);
+            console.error('Error handling webhook message:', error);
         }
     }
 });
@@ -276,97 +284,4 @@ client.on(Events.GuildMemberRemove, async (member) => {
     }
 });
 
-// ==========================
-// GitHub Webhook Endpoint
-// ==========================
-app.use(express.json());
-
-// Store the last sent message ID for GitHub updates
-let lastGitHubMessageId = null;
-
-app.post('/github-webhook', async (req, res) => {
-    const payload = req.body;
-
-    // Check if the payload has the expected structure
-    if (!payload || !payload.ref || !payload.head_commit || !payload.repository) {
-        return res.status(400).send('Invalid payload');
-    }
-
-    // Check if the event is a push to the main branch
-    if (payload.ref === 'refs/heads/main') { // Adjust the branch name if necessary
-        const commitMessage = payload.head_commit.message || 'No commit message';
-        const author = payload.head_commit.author?.name || 'Unknown Author';
-        const repoName = payload.repository.name || 'Unknown Repository';
-        const commitHash = payload.head_commit.id;
-
-        try {
-            // Fetch the commit details from the GitHub API
-            const commitDetails = await fetchCommitDetails(payload.repository.full_name, commitHash);
-
-            // Get the number of lines added and removed
-            const added = commitDetails.stats?.additions || 0;
-            const removed = commitDetails.stats?.deletions || 0;
-
-            // Get the list of modified files
-            const modifiedFiles = commitDetails.files
-                ?.filter(file => file.status === 'modified') // Filter only modified files
-                .map(file => file.filename) // Extract filenames
-                .join('\n') || 'No files modified'; // Join filenames with newlines
-
-            // Create the Discord message
-            const message = `🎉 **Update Detected** 🎉\nRepository: **${repoName}**\nAuthor: **${author}**\nCommit Message: **${commitMessage}**\nLines Added: **${added}**\nLines Removed: **${removed}**\nModified Files:\n\`\`\`\n${modifiedFiles}\n\`\`\``;
-
-            // Send the message to a specific Discord channel
-            const githubChannel = client.channels.cache.get('1319595096244752494'); // Replace with your channel ID
-            if (githubChannel) {
-                if (lastGitHubMessageId) {
-                    try {
-                        // Delete the previous message
-                        const lastMessage = await githubChannel.messages.fetch(lastGitHubMessageId);
-                        await lastMessage.delete();
-                        console.log(`Deleted previous GitHub update message: ${lastGitHubMessageId}`);
-                    } catch (error) {
-                        console.error('Error deleting previous GitHub update message:', error);
-                    }
-                }
-
-                // Send the new message
-                const newMessage = await githubChannel.send(message);
-                lastGitHubMessageId = newMessage.id;
-                console.log(`GitHub update message sent: ${newMessage.id}`);
-            } else {
-                console.error('GitHub channel not found.');
-            }
-
-            // Send a success response
-            res.status(200).send('Webhook received');
-        } catch (error) {
-            console.error('Error processing GitHub webhook:', error);
-            res.status(500).send('Error processing webhook');
-        }
-    } else {
-        res.status(200).send('Not a push to the main branch');
-    }
-});
-
-// Function to fetch commit details from the GitHub API
-async function fetchCommitDetails(repoFullName, commitHash) {
-    const url = `${GITHUB_API_URL}/repos/${repoFullName}/commits/${commitHash}`;
-    const headers = {
-        Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
-        Accept: 'application/vnd.github.v3+json',
-    };
-
-    const response = await axios.get(url, { headers });
-    return response.data;
-}
-
-// Start the Express server
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`GitHub webhook listener running on http://localhost:${PORT}`);
-});
-
-// Log in the bot
 client.login(token);
-//
-//
