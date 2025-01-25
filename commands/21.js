@@ -37,8 +37,6 @@ module.exports = {
                 }
 
                 if (result.length > 0) {
-                    const user = interaction.options.getUser('user');
-                    const reason = interaction.options.getString('reason') || 'No reason provided';
 
                     if (interaction.user.id === '1087801524282982450') {
                         return interaction.reply('No oliver');
