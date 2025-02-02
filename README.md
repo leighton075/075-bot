@@ -22,7 +22,7 @@ Bot is designed for use on a small private server because I don't like Maki. It'
 - Fix inventory value api response error
 - Add embeds to anything that needs to look pretty
 - Gambling
-- Some other ai stuff
+- Update Spotify api to more stable version
 
 ## Disclaimer
 
