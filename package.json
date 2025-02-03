@@ -9,8 +9,6 @@
     "preinstall": "npx npm-force-resolutions"
   },
   "resolutions": {
-    "undici": "^7.3.0",
-    "ws": "^8.17.1"
   },
   "keywords": [
     "discord",
