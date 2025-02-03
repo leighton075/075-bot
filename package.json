@@ -29,7 +29,7 @@
   },
   "resolutions": {
     "superagent": "^9.0.0",
-    "undici": "7.22.4",
+    "undici": "^7.3.0",
     "ws": "^8.17.1"
   },
   "keywords": [
