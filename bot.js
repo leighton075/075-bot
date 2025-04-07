@@ -27,6 +27,9 @@ const spotifyApi = new SpotifyWebApi({
     clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
 });
 
+const server_addess = '134.255.198.3:25918';
+let status = null;
+
 let accessToken = '';
 
 async function authenticateSpotify() {
@@ -124,6 +127,7 @@ const updateCommandUsage = (commandName) => {
 client.once('ready', async () => {
     console.log(`[INFO] ${client.user.tag} has logged in.`);
     console.log(`[INFO] Loaded ${commandFiles.length} commands locally.`);
+    setInterval(checkStatus, 60 * 1000);
 
     await authenticateSpotify();
 
@@ -304,5 +308,32 @@ client.on(Events.GuildMemberRemove, async (member) => {
         }
     }
 });
+
+async function checkStatus() {
+    const url = `https://api.mcstatus.io/v2/status/java/${SERVER_ADDRESS}`;
+
+    try {
+        const res = await fetch(url);
+        const status = res.ok ? await res.join() : null;
+        const currentStatus = status ? 'Online' : 'Offline';
+
+        if (currentStatus !== lastStatus) {
+            lastStatus = currentStatus;
+            const channel = await client.channels.fetch('1319595096244752494');
+
+            if (channel) {
+                const embed = new EmbedBuilder()
+                    .setColor(currentStatus === 'Online' ? '#00ff00' : '#ff0000')
+                    .setTitle(`Server Status: ${currentStatus}`)
+                    .setDescription(`The server is currently ${currentStatus}.`)
+                    .setTimestamp();
+
+                await statusChannel.send({ embeds: [embed] });
+            }
+        }
+    } catch (err) {
+        console.error('Error fetching server status:', err);
+    }
+}
 
 client.login(token);
