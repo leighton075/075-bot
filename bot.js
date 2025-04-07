@@ -3,7 +3,6 @@ const { clientId, guildId, token } = require('./config.json');
 const SpotifyWebApi = require('spotify-web-api-node');
 const fs = require('node:fs');
 const path = require('path');
-const mysql = require('mysql2');
 require('dotenv').config();
 
 // ==========================
@@ -42,24 +41,6 @@ async function authenticateSpotify() {
         console.error('Error getting Spotify access token:', err);
     }
 }
-
-// ==========================
-// mySQL Setup
-// ==========================
-const db = mysql.createConnection({
-    host: 'localhost',
-    user: process.env.SQL_USERNAME,
-    password: process.env.SQL_PASSWORD,
-    database: 'bot_verification'
-});
-
-db.connect((err) => {
-    if (err) {
-        console.error(`[ERROR] Error connecting to the database: ${err}`);
-    } else {
-        console.log(`[INFO] Connected to the mySQL database.`);
-    }
-});
 
 // ==========================
 // Register Commands
@@ -190,17 +171,17 @@ client.on(Events.InteractionCreate, async (interaction) => {
     if (!interaction.isChatInputCommand()) return;
     const command = commands.get(interaction.commandName);
     if (!command) {
-      return interaction.reply({ content: 'Unknown command!', ephemeral: true });
+        return interaction.reply({ content: 'Unknown command!', ephemeral: true });
     }
-  
+
     try {
-      // Update command usage
-      updateCommandUsage(interaction.commandName);
-  
-      await command.execute(interaction, client);
+        // Update command usage
+        updateCommandUsage(interaction.commandName);
+
+        await command.execute(interaction, client);
     } catch (error) {
-      console.error(`Error executing command ${interaction.commandName}:`, error);
-      interaction.reply({ content: 'An error occurred while executing this command.', ephemeral: true });
+        console.error(`Error executing command ${interaction.commandName}:`, error);
+        interaction.reply({ content: 'An error occurred while executing this command.', ephemeral: true });
     }
 });
 
