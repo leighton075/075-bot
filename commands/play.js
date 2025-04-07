@@ -2,25 +2,6 @@ const { SlashCommandBuilder } = require('discord.js');
 const { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus, VoiceConnectionStatus } = require('@discordjs/voice');
 const fs = require('fs');
 const path = require('path');
-const mysql = require('mysql2');
-
-// ==========================
-//        mySQL Setup
-// ==========================
-const db = mysql.createConnection({
-    host: 'localhost',
-    user: process.env.SQL_USERNAME,
-    password: process.env.SQL_PASSWORD,
-    database: 'bot_verification'
-});
-
-db.connect((err) => {
-    if (err) {
-        console.error(`[ERROR] Error connecting to the database in play.js: ${err}`);
-    } else {
-        console.log(`[INFO] Connected to the mySQL database in play.js.`);
-    }
-});
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -35,67 +16,60 @@ module.exports = {
             )),
 
     async execute(interaction) {
-        const userId = interaction.user.id;
+        const sound = interaction.options.getString('sound');
+        const voiceChannel = interaction.member.voice.channel;
+        let hasReplied = false;
 
-        const checkQuery = 'SELECT * FROM verification WHERE user_id = ?';
-        db.query(checkQuery, [userId], async (err, result) => {
-            if (err) {
-                console.error(`[ERROR] Error checking user in the database: ${err}`);
-                return interaction.reply('There was an error processing your request.');
+        // Check if the user is in a voice channel
+        if (!voiceChannel) {
+            return interaction.reply({ content: 'You need to join a voice channel first!', ephemeral: true });
+        }
+
+        try {
+            await interaction.deferReply();
+
+            // Join the voice channel
+            const connection = joinVoiceChannel({
+                channelId: voiceChannel.id,
+                guildId: interaction.guild.id,
+                adapterCreator: interaction.guild.voiceAdapterCreator,
+            });
+
+            // Set the file path for the sound
+            const filePath = path.resolve(__dirname, '../sounds', `${sound}.mp3`);
+
+            // Check if the sound file exists
+            if (!fs.existsSync(filePath)) {
+                console.error('File not found:', filePath);
+                return interaction.followUp({ content: 'Sound file not found.', ephemeral: true });
             }
 
-            if (result.length > 0) {
-                const sound = interaction.options.getString('sound');
-                const voiceChannel = interaction.member.voice.channel;
-                let hasReplied = false;
-        
-                if (!voiceChannel) {
-                    return interaction.reply({ content: 'You need to join a voice channel first!', ephemeral: true });
+            // Create and play the audio resource
+            const resource = createAudioResource(fs.createReadStream(filePath));
+            const player = createAudioPlayer();
+
+            player.play(resource);
+            connection.subscribe(player);
+
+            // Send a message when the sound starts playing
+            player.on(AudioPlayerStatus.Playing, () => {
+                if (!hasReplied) {
+                    interaction.followUp({ content: `Now playing: ${sound}`, ephemeral: true });
+                    hasReplied = true;
                 }
-        
-                try {
-                    await interaction.deferReply();
-        
-                    const connection = joinVoiceChannel({
-                        channelId: voiceChannel.id,
-                        guildId: interaction.guild.id,
-                        adapterCreator: interaction.guild.voiceAdapterCreator,
-                    });
-        
-                    const filePath = path.resolve(__dirname, '../sounds', `${sound}.mp3`);
-        
-                    if (!fs.existsSync(filePath)) {
-                        console.error('File not found:', filePath);
-                        return interaction.followUp({ content: 'Sound file not found.', ephemeral: true });
-                    }
-        
-                    const resource = createAudioResource(fs.createReadStream(filePath));
-                    const player = createAudioPlayer();
-        
-                    player.play(resource);
-                    connection.subscribe(player);
-        
-                    player.on(AudioPlayerStatus.Playing, () => {
-                        if (!hasReplied) {
-                            interaction.followUp({ content: `Now playing: ${sound}`, ephemeral: true });
-                            hasReplied = true;
-                        }
-                    });
-        
-                    player.on(AudioPlayerStatus.Idle, () => {
-                        connection.destroy();
-                    });
-        
-                    connection.on(VoiceConnectionStatus.Disconnected, () => {
-                        connection.destroy();
-                    });
-        
-                } catch (error) {
-                    return interaction.followUp({ content: `There was an error playing the sound:v${error}`, ephemeral: true });
-                }
-            } else {
-                return interaction.reply('You need to verify your account first. Please verify your account using `/verify`.');
-            }
-        });
+            });
+
+            // Cleanup once the audio has finished playing
+            player.on(AudioPlayerStatus.Idle, () => {
+                connection.destroy();
+            });
+
+            connection.on(VoiceConnectionStatus.Disconnected, () => {
+                connection.destroy();
+            });
+
+        } catch (error) {
+            return interaction.followUp({ content: `There was an error playing the sound: ${error}`, ephemeral: true });
+        }
     },
 };

@@ -1,6 +1,5 @@
 const { SlashCommandBuilder } = require('discord.js');
 const SpotifyWebApi = require('spotify-web-api-node');
-const mysql = require('mysql2');
 
 // ==========================
 //    Spotify Setup & Auth
@@ -8,24 +7,6 @@ const mysql = require('mysql2');
 const spotifyApi = new SpotifyWebApi({
     clientId: process.env.SPOTIFY_CLIENT_ID,
     clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
-});
-
-// ==========================
-//        mySQL Setup
-// ==========================
-const db = mysql.createConnection({
-    host: 'localhost',
-    user: process.env.SQL_USERNAME,
-    password: process.env.SQL_PASSWORD,
-    database: 'bot_verification'
-});
-
-db.connect((err) => {
-    if (err) {
-        console.error(`[ERROR] Error connecting to the database in botsong.js: ${err}`);
-    } else {
-        console.log(`[INFO] Connected to the mySQL database in botsong.js.`);
-    }
 });
 
 module.exports = {
@@ -40,21 +21,7 @@ module.exports = {
 
     async execute(interaction, client) {
         try {
-            const userId = interaction.user.id;
-
-            const checkQuery = 'SELECT * FROM verification WHERE user_id = ?';
-            db.query(checkQuery, [userId], async (err, result) => {
-                if (err) {
-                    console.error(`[ERROR] Error checking user in the database: ${err}`);
-                    return interaction.reply('There was an error processing your request.');
-                }
-
-                if (result.length > 0) {
-                    await playRandomSong(interaction, client);
-                } else {
-                    return interaction.reply('You need to verify your account first. Please verify your account using `/verify`.');
-                }
-            });
+            await playRandomSong(interaction, client);
         } catch (error) {
             console.error('[ERROR] Error executing botsong command:', error);
             return interaction.reply({ content: 'There was an error changing the song. Please try again later.', ephemeral: true });

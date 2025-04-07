@@ -1,22 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js');
-const mysql = require('mysql2');
 const OpenAi = require('openai');
 require('dotenv').config();
-
-const db = mysql.createConnection({
-    host: 'localhost',
-    user: process.env.SQL_USERNAME,
-    password: process.env.SQL_PASSWORD,
-    database: 'bot_verification'
-});
-
-db.connect((err) => {
-    if (err) {
-        console.error(`[ERROR] Error connecting to the database in chat.js: ${err}`);
-    } else {
-        console.log(`[INFO] Connected to the MySQL database in chat.js.`);
-    }
-});
 
 const openai = new OpenAi({
     baseURL: 'https://api.deepseek.com',
@@ -24,7 +8,7 @@ const openai = new OpenAi({
 });
 
 const cooldownMap = new Map();
-const COOLDOWN_TIME = 60000; // 30 seconds in milliseconds
+const COOLDOWN_TIME = 60000; // 60 seconds
 
 function splitMessage(content, maxLength = 2000) {
     const chunks = [];
@@ -65,45 +49,31 @@ module.exports = {
                 return interaction.editReply('Go to the bot-chat channel so we don\'t get fanfics in general.');
             }
 
-            const checkQuery = 'SELECT * FROM verification WHERE user_id = ?';
-            db.query(checkQuery, [userId], async (err, result) => {
-                if (err) {
-                    console.error(`[ERROR] Error checking user in the database: ${err}`);
-                    return interaction.editReply({ content: 'There was an error processing your request.', ephemeral: true });
+            const prompt = interaction.options.getString('prompt');
+
+            try {
+                const completion = await openai.chat.completions.create({
+                    messages: [
+                        { role: "system", content: `You are a chat bot in a Discord server. Limit responses to 4000 characters. User prompt: ${prompt}` }
+                    ],
+                    model: "deepseek-chat",
+                });
+
+                const response = completion.choices[0].message.content;
+
+                // Split and send the response in chunks
+                const chunks = splitMessage(response);
+                await interaction.editReply(chunks[0]);
+
+                for (let i = 1; i < chunks.length; i++) {
+                    await interaction.followUp({ content: chunks[i] });
                 }
 
-                if (result.length > 0) {
-                    const prompt = interaction.options.getString('prompt');
+            } catch (error) {
+                console.error(`[ERROR] Error getting AI response:`, error);
+                await interaction.editReply('There was an error processing your prompt.');
+            }
 
-                    try {
-                        const completion = await openai.chat.completions.create({
-                            messages: [{ role: "system", content: `You are a chat bot in a discord server. Make your response have a max of 4000 characters. User prompt: ${prompt}` }],
-                            model: "deepseek-chat",
-                        });
-
-                        const response = completion.choices[0].message.content;
-
-                        // Split the response into chunks of 2000 characters or fewer
-                        const chunks = splitMessage(response);
-
-                        // Send the first chunk as an edit to the deferred reply
-                        await interaction.editReply(chunks[0]);
-
-                        // Send the remaining chunks as follow-up messages
-                        for (let i = 1; i < chunks.length; i++) {
-                            await interaction.followUp({ content: chunks[i] });
-                        }
-                    } catch (error) {
-                        console.error(`[ERROR]:\n${error}`);
-                        await interaction.editReply('There was an error processing your prompt.');
-                    }          
-                } else {
-                    await interaction.editReply({
-                        content: 'You need to verify your account first. Please verify your account using `/verify`.',
-                        ephemeral: true,
-                    });
-                }
-            });
         } catch (error) {
             console.error('[ERROR] Unexpected error during chat process:', error);
             await interaction.editReply({ content: 'An unexpected error occurred. Please try again later.', ephemeral: true });

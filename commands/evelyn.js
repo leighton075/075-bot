@@ -1,25 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
-const mysql = require('mysql2');
-
-// ==========================
-//        mySQL Setup
-// ==========================
-const db = mysql.createConnection({
-    host: 'localhost',
-    user: process.env.SQL_USERNAME,
-    password: process.env.SQL_PASSWORD,
-    database: 'bot_verification'
-});
-
-db.connect((err) => {
-    if (err) {
-        console.error(`[ERROR] Error connecting to the database in evelyn.js: ${err}`);
-    } else {
-        console.log(`[INFO] Connected to the mySQL database in evelyn.js.`);
-    }
-});
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -28,21 +9,7 @@ module.exports = {
 
     async execute(interaction) {
         try {
-            const userId = interaction.user.id;
-
-            const checkQuery = 'SELECT * FROM verification WHERE user_id = ?';
-            db.query(checkQuery, [userId], async (err, result) => {
-                if (err) {
-                    console.error(`[ERROR] Error checking user in the database: ${err}`);
-                    return interaction.reply('There was an error processing your request.');
-                }
-
-                if (result.length > 0) {
-                    await getRandomEvelynEdit(interaction);
-                } else {
-                    return interaction.reply('You need to verify your account first. Please verify your account using `/verify`.');
-                }
-            });
+            await getRandomEvelynEdit(interaction);
         } catch (error) {
             console.error('[ERROR] Error executing evelyn command:', error);
             return interaction.reply({ content: 'There was an error getting a video of Evelyn. Please try again later.', ephemeral: true });
