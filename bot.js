@@ -293,10 +293,21 @@ client.on(Events.GuildMemberRemove, async (member) => {
 async function checkStatus() {
     const url = `https://api.mcstatus.io/v2/status/java/${SERVER_ADDRESS}`;
 
+    console.log(`[DEBUG] Pinging Minecraft server at: ${url}`);
+
     try {
         const res = await fetch(url);
-        const status = res.ok ? await res.join() : null;
-        const currentStatus = status ? 'Online' : 'Offline';
+
+        if (!res.ok) {
+            console.error(`[ERROR] Failed to fetch server status. HTTP Status: ${res.status}`);
+            return;
+        }
+
+        const status = await res.json();
+        console.log(`[DEBUG] Server response: ${JSON.stringify(status)}`);
+
+        const currentStatus = status.online ? 'Online' : 'Offline';
+        console.log(`[INFO] Current server status: ${currentStatus}`);
 
         if (currentStatus !== lastStatus) {
             lastStatus = currentStatus;
@@ -309,11 +320,12 @@ async function checkStatus() {
                     .setDescription(`The server is currently ${currentStatus}.`)
                     .setTimestamp();
 
-                await statusChannel.send({ embeds: [embed] });
+                console.log(`[DEBUG] Sending status update to channel: ${channel.id}`);
+                await channel.send({ embeds: [embed] });
             }
         }
     } catch (err) {
-        console.error('Error fetching server status:', err);
+        console.error(`[ERROR] Error fetching server status: ${err.message}`);
     }
 }
 
