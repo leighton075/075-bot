@@ -26,7 +26,7 @@ const spotifyApi = new SpotifyWebApi({
     clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
 });
 
-const server_addess = '134.255.198.3:25918';
+const SERVER_ADDRESS = '134.255.198.3:25918';
 let status = null;
 
 let accessToken = '';
