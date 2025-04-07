@@ -26,8 +26,6 @@ const spotifyApi = new SpotifyWebApi({
     clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
 });
 
-const SERVER_ADDRESS = '134.255.198.3:25918';
-let status = null;
 
 let accessToken = '';
 
@@ -108,7 +106,6 @@ const updateCommandUsage = (commandName) => {
 client.once('ready', async () => {
     console.log(`[INFO] ${client.user.tag} has logged in.`);
     console.log(`[INFO] Loaded ${commandFiles.length} commands locally.`);
-    setInterval(checkStatus, 10 * 1000);
 
     await authenticateSpotify();
 
@@ -289,44 +286,5 @@ client.on(Events.GuildMemberRemove, async (member) => {
         }
     }
 });
-
-async function checkStatus() {
-    const url = `https://api.mcstatus.io/v2/status/java/${SERVER_ADDRESS}`;
-
-    console.log(`[DEBUG] Pinging Minecraft server at: ${url}`);
-
-    try {
-        const res = await fetch(url);
-
-        if (!res.ok) {
-            console.error(`[ERROR] Failed to fetch server status. HTTP Status: ${res.status}`);
-            return;
-        }
-
-        const status = await res.json();
-        console.log(`[DEBUG] Server response: ${JSON.stringify(status)}`);
-
-        const currentStatus = status.online ? 'Online' : 'Offline';
-        console.log(`[INFO] Current server status: ${currentStatus}`);
-
-        if (currentStatus !== lastStatus) {
-            lastStatus = currentStatus;
-            const channel = await client.channels.fetch('1319595096244752494');
-
-            if (channel) {
-                const embed = new EmbedBuilder()
-                    .setColor(currentStatus === 'Online' ? '#00ff00' : '#ff0000')
-                    .setTitle(`Server Status: ${currentStatus}`)
-                    .setDescription(`The server is currently ${currentStatus}.`)
-                    .setTimestamp();
-
-                console.log(`[DEBUG] Sending status update to channel: ${channel.id}`);
-                await channel.send({ embeds: [embed] });
-            }
-        }
-    } catch (err) {
-        console.error(`[ERROR] Error fetching server status: ${err.message}`);
-    }
-}
 
 client.login(token);
