@@ -108,7 +108,7 @@ const updateCommandUsage = (commandName) => {
 client.once('ready', async () => {
     console.log(`[INFO] ${client.user.tag} has logged in.`);
     console.log(`[INFO] Loaded ${commandFiles.length} commands locally.`);
-    setInterval(checkStatus, 60 * 1000);
+    setInterval(checkStatus, 10 * 1000);
 
     await authenticateSpotify();
 
