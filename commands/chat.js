@@ -45,7 +45,7 @@ module.exports = {
 
             cooldownMap.set(userId, Date.now());
 
-            if (interaction.channel.id !== '1332214186314436759') {
+            if (interaction.channel.id !== '1332214186314436759' && interaction.channel.id !== '1332273827446784072') {
                 return interaction.editReply('Go to the bot-chat channel so we don\'t get fanfics in general.');
             }
 
