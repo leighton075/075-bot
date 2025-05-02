@@ -54,7 +54,7 @@ module.exports = {
             try {
                 const completion = await openai.chat.completions.create({
                     messages: [
-                        { role: "system", content: `You are a chat bot in a Discord server. Limit responses to 4000 characters. User prompt: ${prompt}` }
+                        { role: "system", content: `You are a chat bot in a Discord server. Limit responses to 4000 characters at dont use icons that have to be embeded. User prompt: ${prompt}` }
                     ],
                     model: "deepseek-chat",
                 });
