@@ -19,6 +19,7 @@ module.exports = {
             const response = await axios.get(`https://public-api.tracker.gg/v2/csgo/standard/profile/steam/${username}`, {
                 headers: {
                     'TRN-Api-Key': process.env.TRACKER_KEY,
+                    'Accept': 'application/json',
                 },
             });
 
@@ -30,18 +31,21 @@ module.exports = {
                 .setThumbnail(data.platformInfo.avatarUrl)
                 .setColor(0x0099ff)
                 .addFields(
-                    { name: 'K/D', value: stats.kd.displayValue || 'N/A', inline: true },
-                    { name: 'Kills', value: stats.kills.displayValue || 'N/A', inline: true },
-                    { name: 'Headshot %', value: stats.headshotPct.displayValue || 'N/A', inline: true },
-                    { name: 'Win %', value: stats.wlPercentage.displayValue || 'N/A', inline: true },
-                    { name: 'Accuracy', value: stats.shotsAccuracy.displayValue || 'N/A', inline: true },
-                    { name: 'Playtime', value: stats.timePlayed.displayValue || 'N/A', inline: true }
+                    { name: 'K/D', value: stats.kd?.displayValue || 'N/A', inline: true },
+                    { name: 'Kills', value: stats.kills?.displayValue || 'N/A', inline: true },
+                    { name: 'Headshot %', value: stats.headshotPct?.displayValue || 'N/A', inline: true },
+                    { name: 'Win %', value: stats.wlPercentage?.displayValue || 'N/A', inline: true },
+                    { name: 'Accuracy', value: stats.shotsAccuracy?.displayValue || 'N/A', inline: true },
+                    { name: 'Playtime', value: stats.timePlayed?.displayValue || 'N/A', inline: true }
                 );
 
             await interaction.reply({ embeds: [embed] });
         } catch (error) {
             console.error(error);
-            await interaction.reply({ content: `❌ Failed to fetch stats: ${error.response?.data?.message || error.message}` });
+            await interaction.reply({
+                content: `❌ Failed to fetch stats: ${error.response?.data?.message || error.message}`,
+                ephemeral: true,
+            });
         }
     },
 };
