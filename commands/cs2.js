@@ -1,49 +1,83 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const axios = require('axios');
 
+// Mocked database to store linked Steam accounts and match share codes
+const userLinkDatabase = {}; // userLinkDatabase[userID] = { steamId: "steamId", shareCode: "shareCode" }
+
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('stats')
         .setDescription('Get CS2 stats for a Steam player')
-        .addStringOption(option =>
-            option
-                .setName('player')
-                .setDescription('Steam username')
-                .setRequired(true)
+        // Main stats subcommand
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName('stats')
+                .setDescription('Get CS2 stats for a Steam player')
+                .addStringOption(option =>
+                    option
+                        .setName('player')
+                        .setDescription('Steam username')
+                        .setRequired(true)
+                )
+        )
+        // Subcommand to link a Steam account to a Discord user
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName('link')
+                .setDescription('Link your Discord account to a Steam account')
+                .addStringOption(option =>
+                    option
+                        .setName('steamid')
+                        .setDescription('Your Steam ID')
+                        .setRequired(true)
+                )
+        )
+        // Subcommand to set match share code
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName('setsharecode')
+                .setDescription('Set your CS2 match share code')
+                .addStringOption(option =>
+                    option
+                        .setName('sharecode')
+                        .setDescription('Your match share code')
+                        .setRequired(true)
+                )
         ),
 
     async execute(interaction) {
-        const username = interaction.options.getString('player');
+        const subcommand = interaction.options.getSubcommand();
+        const userId = interaction.user.id;
 
-        try {
-            const response = await axios.get(`https://public-api.tracker.gg/v2/csgo/standard/profile/steam/${username}`, {
-                headers: {
-                    'TRN-Api-Key': process.env.TRACKER_KEY,
-                    'Accept': 'application/json',
-                },
-            });
+        if (subcommand === 'stats') {
+        }
 
-            const data = response.data.data;
-            const stats = data.segments[0].stats;
+        if (subcommand === 'link') {
+            // Link Steam account to Discord user
+            const steamId = interaction.options.getString('steamid');
+            userLinkDatabase[userId] = { steamId }; // Store the Steam ID in the mock database
 
-            const embed = new EmbedBuilder()
-                .setTitle(`CS:GO Stats for ${data.platformInfo.platformUserHandle}`)
-                .setThumbnail(data.platformInfo.avatarUrl)
-                .setColor(0x0099ff)
-                .addFields(
-                    { name: 'K/D', value: stats.kd?.displayValue || 'N/A', inline: true },
-                    { name: 'Kills', value: stats.kills?.displayValue || 'N/A', inline: true },
-                    { name: 'Headshot %', value: stats.headshotPct?.displayValue || 'N/A', inline: true },
-                    { name: 'Win %', value: stats.wlPercentage?.displayValue || 'N/A', inline: true },
-                    { name: 'Accuracy', value: stats.shotsAccuracy?.displayValue || 'N/A', inline: true },
-                    { name: 'Playtime', value: stats.timePlayed?.displayValue || 'N/A', inline: true }
-                );
-
-            await interaction.reply({ embeds: [embed] });
-        } catch (error) {
-            console.error(error);
             await interaction.reply({
-                content: `❌ Failed to fetch stats: ${error.response?.data?.message || error.message}`,
+                content: `Your Steam account with ID ${steamId} has been linked to your Discord account.`,
+                ephemeral: true,
+            });
+        }
+
+        if (subcommand === 'setsharecode') {
+            // Set match share code for a user
+            const shareCode = interaction.options.getString('sharecode');
+
+            if (!userLinkDatabase[userId]) {
+                return await interaction.reply({
+                    content: 'You need to link your Steam account first using `/stats link <steamid>`',
+                    ephemeral: true,
+                });
+            }
+
+            userLinkDatabase[userId].shareCode = shareCode;
+
+            await interaction.reply({
+                content: `Your match share code has been set to: ${shareCode}`,
                 ephemeral: true,
             });
         }
