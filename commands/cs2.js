@@ -87,7 +87,7 @@ module.exports = {
 
             if (!userLinkDatabase[userId]) {
                 return await interaction.reply({
-                    content: 'You need to link your Steam account first using `/cs2 link <steamid>`'
+                    content: 'You need to link your Steam account first using `/cs2 link <steam profile url>`.'
                 });
             }
 
@@ -104,12 +104,18 @@ module.exports = {
 
             if (!userLink) {
                 return await interaction.reply({
-                    content: 'You have not linked a Steam account yet. Please use `/cs2 link <steamid>` to link your account.'
+                    content: 'You have not linked a Steam account yet. Please use `/cs2 link <steam profile url>` to link your account.'
                 });
             }
 
             const steamId = userLink.steamId || 'Not set';
             const shareCode = userLink.shareCode || 'Not set';
+
+            if (shareCode === 'Not set') {
+                return await interaction.reply({
+                    content: `Your Steam account ID is: ${steamId}\nYour match share code is: ${shareCode}\n\nIt looks like you haven't set a match share code yet. Please visit [this link](https://help.steampowered.com/en/wizard/HelpWithGameIssue/?appid=730&issueid=128) to get it.`
+                });
+            }
 
             await interaction.reply({
                 content: `Your Steam account ID is: ${steamId}\nYour match share code is: ${shareCode}`
