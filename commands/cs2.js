@@ -43,6 +43,12 @@ module.exports = {
                         .setDescription('Your match share code')
                         .setRequired(true)
                 )
+        )
+        // Subcommand to test the linked Steam account and share code
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName('test')
+                .setDescription('Check your linked Steam account and match share code')
         ),
 
     async execute(interaction) {
@@ -51,7 +57,6 @@ module.exports = {
 
         if (subcommand === 'stats') {
             // Fetch CS2 stats for a player using their Steam username
-            
         }
 
         if (subcommand === 'link') {
@@ -82,7 +87,7 @@ module.exports = {
 
             if (!userLinkDatabase[userId]) {
                 return await interaction.reply({
-                    content: 'You need to link your Steam account first using `/stats link <steamid>`'
+                    content: 'You need to link your Steam account first using `/cs2 link <steamid>`'
                 });
             }
 
@@ -90,6 +95,24 @@ module.exports = {
 
             await interaction.reply({
                 content: `Your match share code has been set to: ${shareCode}`
+            });
+        }
+
+        if (subcommand === 'test') {
+            // Check the user's linked Steam account and share code
+            const userLink = userLinkDatabase[userId];
+
+            if (!userLink) {
+                return await interaction.reply({
+                    content: 'You have not linked a Steam account yet. Please use `/cs2 link <steamid>` to link your account.'
+                });
+            }
+
+            const steamId = userLink.steamId || 'Not set';
+            const shareCode = userLink.shareCode || 'Not set';
+
+            await interaction.reply({
+                content: `Your Steam account ID is: ${steamId}\nYour match share code is: ${shareCode}`
             });
         }
     },
