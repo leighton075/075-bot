@@ -1,8 +1,29 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
 
-// Mocked database to store linked Steam accounts and match share codes
-const userLinkDatabase = {}; // userLinkDatabase[userID] = { steamId: "steamId", shareCode: "shareCode" }
+// Path to the JSON file that will store user data
+const databaseFilePath = path.join(__dirname, '..', 'steam-data.json');
+
+// Function to load the database from the JSON file
+function loadDatabase() {
+    try {
+        const data = fs.readFileSync(databaseFilePath, 'utf8');
+        return JSON.parse(data);
+    } catch (error) {
+        console.error('Error loading database:', error);
+        return {}; // Return an empty object if there's an error
+    }
+}
+
+// Function to save the database to the JSON file
+function saveDatabase(database) {
+    try {
+        fs.writeFileSync(databaseFilePath, JSON.stringify(database, null, 4));
+    } catch (error) {
+        console.error('Error saving database:', error);
+    }
+}
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -55,6 +76,9 @@ module.exports = {
         const subcommand = interaction.options.getSubcommand();
         const userId = interaction.user.id;
 
+        // Load the database from the file
+        const userLinkDatabase = loadDatabase();
+
         if (subcommand === 'stats') {
             // Fetch CS2 stats for a player using their Steam username
         }
@@ -74,7 +98,11 @@ module.exports = {
             
             const steamId = steamIdMatch[1]; // Extracted Steam ID
 
-            userLinkDatabase[userId] = { steamId }; // Store the Steam ID in the mock database
+            // Store the Steam ID in the database
+            userLinkDatabase[userId] = { steamId };
+
+            // Save the updated database
+            saveDatabase(userLinkDatabase);
 
             await interaction.reply({
                 content: `Your Steam account with ID ${steamId} has been linked to your Discord account.`
@@ -91,7 +119,11 @@ module.exports = {
                 });
             }
 
+            // Update the share code in the database
             userLinkDatabase[userId].shareCode = shareCode;
+
+            // Save the updated database
+            saveDatabase(userLinkDatabase);
 
             await interaction.reply({
                 content: `Your match share code has been set to: ${shareCode}`
