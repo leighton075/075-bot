@@ -63,15 +63,7 @@ module.exports = {
         }
 
         // When any subcommand is used, update the user's Discord username in the database
-        await db.execute(
-            'REPLACE INTO `steam-data` (discord_id, discord_username, steam_id) VALUES (?, ?, ?)',
-            [userId, discordUsername, steamId] // This will update the username, and preserve the steam_id if available
-        );
-
-        if (subcommand === 'stats') {
-            // Implement stats fetch logic (optional, based on your needs)
-        }
-
+        // Check if we already have the combination of discord_id and steam_id
         if (subcommand === 'link') {
             const steamProfile = interaction.options.getString('steamprofile');
             const steamIdMatch = steamProfile.match(/steamcommunity\.com\/profiles\/(\d+)/);
@@ -83,6 +75,18 @@ module.exports = {
             }
 
             steamId = steamIdMatch[1];
+
+            // Check if this combination already exists in the database
+            const [existingLink] = await db.execute(
+                'SELECT * FROM `steam-data` WHERE discord_id = ? AND steam_id = ?',
+                [userId, steamId]
+            );
+
+            if (existingLink.length > 0) {
+                return await interaction.reply({
+                    content: `Your Steam account with ID ${steamId} is already linked to your Discord account.`
+                });
+            }
 
             // Insert or update the Steam ID and Discord username for the user
             await db.execute(
@@ -101,6 +105,18 @@ module.exports = {
             if (!steamId) {
                 return await interaction.reply({
                     content: 'You need to link your Steam account first using `/cs2 link <steam profile url>`.'
+                });
+            }
+
+            // Check if the share code already exists for this discord_id
+            const [existingShareCode] = await db.execute(
+                'SELECT * FROM `steam-data` WHERE discord_id = ? AND share_code = ?',
+                [userId, shareCode]
+            );
+
+            if (existingShareCode.length > 0) {
+                return await interaction.reply({
+                    content: `You have already set this match share code: ${shareCode}.`
                 });
             }
 
