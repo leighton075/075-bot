@@ -6,7 +6,7 @@ const userLinkDatabase = {}; // userLinkDatabase[userID] = { steamId: "steamId",
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('stats')
+        .setName('cs2')
         .setDescription('Get CS2 stats for a Steam player')
         // Main stats subcommand
         .addSubcommand(subcommand =>
