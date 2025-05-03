@@ -47,7 +47,13 @@ module.exports = {
     async execute(interaction) {
         const subcommand = interaction.options.getSubcommand();
         const userId = interaction.user.id;
-        const discordUsername = interaction.user.username; // Get the Discord username
+        const discordUsername = interaction.user.username; // Automatically capture the user's Discord username
+
+        // When any subcommand is used, update the user's Discord username in the database
+        await db.execute(
+            'REPLACE INTO `steam-data` (discord_id, discord_username) VALUES (?, ?)',
+            [userId, discordUsername]
+        );
 
         if (subcommand === 'stats') {
             // Implement stats fetch logic (optional, based on your needs)
@@ -90,7 +96,7 @@ module.exports = {
                 });
             }
 
-            // Update the share code and Discord username
+            // Update the share code and Discord username (even if the username wasn't explicitly changed)
             await db.execute(
                 'UPDATE `steam-data` SET share_code = ?, discord_username = ? WHERE discord_id = ?',
                 [shareCode, discordUsername, userId]
