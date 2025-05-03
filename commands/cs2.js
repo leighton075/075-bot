@@ -27,8 +27,8 @@ module.exports = {
                 .setDescription('Link your Discord account to a Steam account')
                 .addStringOption(option =>
                     option
-                        .setName('steamid')
-                        .setDescription('Your Steam ID')
+                        .setName('steamprofile')
+                        .setDescription('Your Steam profile URL')
                         .setRequired(true)
                 )
         )
@@ -50,11 +50,25 @@ module.exports = {
         const userId = interaction.user.id;
 
         if (subcommand === 'stats') {
+            // Fetch CS2 stats for a player using their Steam username
+            
         }
 
         if (subcommand === 'link') {
-            // Link Steam account to Discord user
-            const steamId = interaction.options.getString('steamid');
+            // Link Steam account to Discord user from profile URL
+            const steamProfile = interaction.options.getString('steamprofile');
+            
+            // Extract Steam ID from the profile URL
+            const steamIdMatch = steamProfile.match(/steamcommunity\.com\/profiles\/(\d+)/);
+            
+            if (!steamIdMatch) {
+                return await interaction.reply({
+                    content: 'Invalid Steam profile URL. Please provide a valid URL in the format https://steamcommunity.com/profiles/<steamid>.'
+                });
+            }
+            
+            const steamId = steamIdMatch[1]; // Extracted Steam ID
+
             userLinkDatabase[userId] = { steamId }; // Store the Steam ID in the mock database
 
             await interaction.reply({
