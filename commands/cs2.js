@@ -49,10 +49,23 @@ module.exports = {
         const userId = interaction.user.id;
         const discordUsername = interaction.user.username; // Automatically capture the user's Discord username
 
+        // First, check if the user already has a linked Steam ID
+        const [userRows] = await db.execute(
+            'SELECT * FROM `steam-data` WHERE discord_id = ?',
+            [userId]
+        );
+
+        let steamId = null;
+
+        // If the user has a linked Steam ID, use it; otherwise, it remains null
+        if (userRows.length > 0) {
+            steamId = userRows[0].steam_id || null;
+        }
+
         // When any subcommand is used, update the user's Discord username in the database
         await db.execute(
-            'REPLACE INTO `steam-data` (discord_id, discord_username) VALUES (?, ?)',
-            [userId, discordUsername]
+            'REPLACE INTO `steam-data` (discord_id, discord_username, steam_id) VALUES (?, ?, ?)',
+            [userId, discordUsername, steamId] // This will update the username, and preserve the steam_id if available
         );
 
         if (subcommand === 'stats') {
@@ -69,7 +82,7 @@ module.exports = {
                 });
             }
 
-            const steamId = steamIdMatch[1];
+            steamId = steamIdMatch[1];
 
             // Insert or update the Steam ID and Discord username for the user
             await db.execute(
@@ -85,18 +98,12 @@ module.exports = {
         if (subcommand === 'setsharecode') {
             const shareCode = interaction.options.getString('sharecode');
 
-            const [rows] = await db.execute(
-                'SELECT * FROM `steam-data` WHERE discord_id = ?',
-                [userId]
-            );
-
-            if (rows.length === 0) {
+            if (!steamId) {
                 return await interaction.reply({
                     content: 'You need to link your Steam account first using `/cs2 link <steam profile url>`.'
                 });
             }
 
-            // Update the share code and Discord username (even if the username wasn't explicitly changed)
             await db.execute(
                 'UPDATE `steam-data` SET share_code = ?, discord_username = ? WHERE discord_id = ?',
                 [shareCode, discordUsername, userId]
