@@ -58,8 +58,7 @@ module.exports = {
             userLinkDatabase[userId] = { steamId }; // Store the Steam ID in the mock database
 
             await interaction.reply({
-                content: `Your Steam account with ID ${steamId} has been linked to your Discord account.`,
-                ephemeral: true,
+                content: `Your Steam account with ID ${steamId} has been linked to your Discord account.`
             });
         }
 
@@ -69,16 +68,14 @@ module.exports = {
 
             if (!userLinkDatabase[userId]) {
                 return await interaction.reply({
-                    content: 'You need to link your Steam account first using `/stats link <steamid>`',
-                    ephemeral: true,
+                    content: 'You need to link your Steam account first using `/stats link <steamid>`'
                 });
             }
 
             userLinkDatabase[userId].shareCode = shareCode;
 
             await interaction.reply({
-                content: `Your match share code has been set to: ${shareCode}`,
-                ephemeral: true,
+                content: `Your match share code has been set to: ${shareCode}`
             });
         }
     },
