@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('discord.js');
-const db = require('../db'); // Make sure you have db.js in your root directory
+const db = require('../db'); // Assuming db.js is where you have the MySQL connection setup
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -47,9 +47,10 @@ module.exports = {
     async execute(interaction) {
         const subcommand = interaction.options.getSubcommand();
         const userId = interaction.user.id;
+        const discordUsername = interaction.user.username; // Get the Discord username
 
         if (subcommand === 'stats') {
-            // Implement stats fetch logic
+            // Implement stats fetch logic (optional, based on your needs)
         }
 
         if (subcommand === 'link') {
@@ -64,9 +65,10 @@ module.exports = {
 
             const steamId = steamIdMatch[1];
 
+            // Insert or update the Steam ID and Discord username for the user
             await db.execute(
-                'REPLACE INTO `steam-data` (discord_id, steam_id) VALUES (?, ?)',
-                [userId, steamId]
+                'REPLACE INTO `steam-data` (discord_id, steam_id, discord_username) VALUES (?, ?, ?)',
+                [userId, steamId, discordUsername]
             );
 
             await interaction.reply({
@@ -88,9 +90,10 @@ module.exports = {
                 });
             }
 
+            // Update the share code and Discord username
             await db.execute(
-                'UPDATE `steam-data` SET share_code = ? WHERE discord_id = ?',
-                [shareCode, userId]
+                'UPDATE `steam-data` SET share_code = ?, discord_username = ? WHERE discord_id = ?',
+                [shareCode, discordUsername, userId]
             );
 
             await interaction.reply({
@@ -112,6 +115,7 @@ module.exports = {
 
             const steamId = rows[0].steam_id || 'Not set';
             const shareCode = rows[0].share_code || 'Not set';
+            const username = rows[0].discord_username || 'Not set'; // Get the username from the DB
 
             if (shareCode === 'Not set') {
                 return await interaction.reply({
@@ -120,7 +124,7 @@ module.exports = {
             }
 
             await interaction.reply({
-                content: `Your Steam account ID is: ${steamId}\nYour match share code is: ${shareCode}`
+                content: `Your Steam account ID is: ${steamId}\nYour match share code is: ${shareCode}\nYour Discord username is: ${username}`
             });
         }
     },
