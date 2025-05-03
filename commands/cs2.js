@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('discord.js');
-const db = require('../db'); // Assuming db.js is where you have the MySQL connection setup
+const db = require('../db'); // Make sure you have db.js in your root directory
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -47,23 +47,11 @@ module.exports = {
     async execute(interaction) {
         const subcommand = interaction.options.getSubcommand();
         const userId = interaction.user.id;
-        const discordUsername = interaction.user.username; // Automatically capture the user's Discord username
 
-        // First, check if the user already has a linked Steam ID
-        const [userRows] = await db.execute(
-            'SELECT * FROM `steam-data` WHERE discord_id = ?',
-            [userId]
-        );
-
-        let steamId = null;
-
-        // If the user has a linked Steam ID, use it; otherwise, it remains null
-        if (userRows.length > 0) {
-            steamId = userRows[0].steam_id || null;
+        if (subcommand === 'stats') {
+            // Implement stats fetch logic
         }
 
-        // When any subcommand is used, update the user's Discord username in the database
-        // Check if we already have the combination of discord_id and steam_id
         if (subcommand === 'link') {
             const steamProfile = interaction.options.getString('steamprofile');
             const steamIdMatch = steamProfile.match(/steamcommunity\.com\/profiles\/(\d+)/);
@@ -74,25 +62,27 @@ module.exports = {
                 });
             }
 
-            steamId = steamIdMatch[1];
+            const steamId = steamIdMatch[1];
 
-            // Check if this combination already exists in the database
-            const [existingLink] = await db.execute(
-                'SELECT * FROM `steam-data` WHERE discord_id = ? AND steam_id = ?',
-                [userId, steamId]
+            // Check if the user already exists in the database
+            const [rows] = await db.execute(
+                'SELECT * FROM `steam-data` WHERE discord_id = ?',
+                [userId]
             );
 
-            if (existingLink.length > 0) {
-                return await interaction.reply({
-                    content: `Your Steam account with ID ${steamId} is already linked to your Discord account.`
-                });
+            if (rows.length > 0) {
+                // If user exists, update the steam_id
+                await db.execute(
+                    'UPDATE `steam-data` SET steam_id = ? WHERE discord_id = ?',
+                    [steamId, userId]
+                );
+            } else {
+                // If user doesn't exist, insert a new record
+                await db.execute(
+                    'INSERT INTO `steam-data` (discord_id, steam_id, discord_username) VALUES (?, ?, ?)',
+                    [userId, steamId, interaction.user.username]
+                );
             }
-
-            // Insert or update the Steam ID and Discord username for the user
-            await db.execute(
-                'REPLACE INTO `steam-data` (discord_id, steam_id, discord_username) VALUES (?, ?, ?)',
-                [userId, steamId, discordUsername]
-            );
 
             await interaction.reply({
                 content: `Your Steam account with ID ${steamId} has been linked to your Discord account.`
@@ -102,27 +92,21 @@ module.exports = {
         if (subcommand === 'setsharecode') {
             const shareCode = interaction.options.getString('sharecode');
 
-            if (!steamId) {
+            const [rows] = await db.execute(
+                'SELECT * FROM `steam-data` WHERE discord_id = ?',
+                [userId]
+            );
+
+            if (rows.length === 0) {
                 return await interaction.reply({
                     content: 'You need to link your Steam account first using `/cs2 link <steam profile url>`.'
                 });
             }
 
-            // Check if the share code already exists for this discord_id
-            const [existingShareCode] = await db.execute(
-                'SELECT * FROM `steam-data` WHERE discord_id = ? AND share_code = ?',
-                [userId, shareCode]
-            );
-
-            if (existingShareCode.length > 0) {
-                return await interaction.reply({
-                    content: `You have already set this match share code: ${shareCode}.`
-                });
-            }
-
+            // If share code is provided, update the user's share code
             await db.execute(
-                'UPDATE `steam-data` SET share_code = ?, discord_username = ? WHERE discord_id = ?',
-                [shareCode, discordUsername, userId]
+                'UPDATE `steam-data` SET share_code = ? WHERE discord_id = ?',
+                [shareCode, userId]
             );
 
             await interaction.reply({
@@ -144,7 +128,6 @@ module.exports = {
 
             const steamId = rows[0].steam_id || 'Not set';
             const shareCode = rows[0].share_code || 'Not set';
-            const username = rows[0].discord_username || 'Not set'; // Get the username from the DB
 
             if (shareCode === 'Not set') {
                 return await interaction.reply({
@@ -153,7 +136,7 @@ module.exports = {
             }
 
             await interaction.reply({
-                content: `Your Steam account ID is: ${steamId}\nYour match share code is: ${shareCode}\nYour Discord username is: ${username}`
+                content: `Your Steam account ID is: ${steamId}\nYour match share code is: ${shareCode}`
             });
         }
     },
