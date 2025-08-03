@@ -2,10 +2,66 @@ const { SlashCommandBuilder, EmbedBuilder, InteractionResponseFlags } = require(
 const axios = require('axios');
 require('dotenv').config();
 
-async function convertToSteamID64(id) {
-    // Add conversion logic if needed
-    // For now just return as-is assuming it's already 64-bit
-    return id;
+class SteamIDConverter {
+    static async resolveSteamID(input, apiKey) {
+        // Check if input is already a SteamID64 (17 digits)
+        if (/^\d{17}$/.test(input)) {
+            return input;
+        }
+
+        // Check if the input is a custom URL (steamcommunity.com/id/username)
+        const customUrlMatch = input.match(/steamcommunity\.com\/id\/([^\/]+)/);
+        if (customUrlMatch) {
+            return this.resolveVanityURL(customUrlMatch[1], apiKey);
+        }
+
+        // Check if the input is a profile URL (steamcommunity.com/profiles/SteamID64)
+        const profileUrlMatch = input.match(/steamcommunity\.com\/profiles\/(\d{17})/);
+        if (profileUrlMatch) {
+            return profileUrlMatch[1];
+        }
+
+        // Check if input is a SteamID3 ([U:1:12345678])
+        const steamID3Match = input.match(/^\[U:1:(\d+)\]$/);
+        if (steamID3Match) {
+            return this.convertSteamID3To64(steamID3Match[1]);
+        }
+
+        // Check if input is a SteamID (STEAM_0:0:12345678)
+        const steamIDMatch = input.match(/^STEAM_([0-5]):([01]):(\d+)$/);
+        if (steamIDMatch) {
+            return this.convertSteamIDTo64(steamIDMatch[1], steamIDMatch[2], steamIDMatch[3]);
+        }
+
+        // Assume it's a vanity URL and try to resolve
+        return this.resolveVanityURL(input, apiKey);
+    }
+
+    static async resolveVanityURL(vanityUrl, apiKey) {
+        try {
+            const response = await axios.get(
+                'https://api.steampowered.com/ISteamUser/ResolveVanityURL/v1/',
+                { params: { key: apiKey, vanityurl: vanityUrl } }
+            );
+
+            if (response.data.response.success === 1) {
+                return response.data.response.steamid;
+            }
+            throw new Error('Custom URL not found');
+        } catch (error) {
+            throw new Error(`Failed to resolve vanity URL: ${error.message}`);
+        }
+    }
+
+    static convertSteamIDTo64(universe, authServer, accountNumber) {
+        // Formula: (accountNumber * 2) + authServer + 76561197960265728
+        return (BigInt(accountNumber) * 2n + BigInt(authServer) + 76561197960265728n);
+    }
+
+    static convertSteamID3To64(accountNumber) {
+        // Formula: accountNumber + 76561197960265728
+        return BigInt(accountNumber) + 76561197960265728n;
+    }
 }
 
 module.exports = {
@@ -19,7 +75,7 @@ module.exports = {
                 .addStringOption(option =>
                     option
                         .setName('userid')
-                        .setDescription('Steam user ID')
+                        .setDescription('Steam user ID, custom URL, or profile URL')
                         .setRequired(true))
                 .addStringOption(option =>
                     option
@@ -33,127 +89,113 @@ module.exports = {
                 .addStringOption(option =>
                     option
                         .setName('userid')
-                        .setDescription('Steam user ID')
+                        .setDescription('Steam user ID, custom URL, or profile URL')
                         .setRequired(true))),
 
     async execute(interaction) {
         const subcommand = interaction.options.getSubcommand();
-        const userid = interaction.options.getString('userid');
+        const userInput = interaction.options.getString('userid');
         const game = interaction.options.getString('game');
         const apiKey = process.env.STEAM_WEB_API_KEY;
-        
+
+        if (!apiKey) {
+            return interaction.reply({ 
+                content: 'Steam API is not configured', 
+                ephemeral: true 
+            });
+        }
+
         try {
+            // Convert any input format to SteamID64
+            const steamId64 = await SteamIDConverter.resolveSteamID(userInput, apiKey);
+            
             if (subcommand === 'inventory') {
-                console.log('Received `/steam inventory` command');
-                console.log(`User ID: ${userid}`);
-                console.log(`Game (if specified): ${game || 'All Games'}`);
+                const inventoryUrl = `https://www.steamwebapi.com/steam/api/inventory?key=${apiKey}&steam_id=${steamId64}${game ? `&game=${game}` : ''}`;
                 
-                const inventoryUrl = `https://www.steamwebapi.com/steam/api/inventory?key=${apiKey}&steam_id=${userid}${game ? `&game=${game}` : ''}`;
-                console.log(`Inventory API URL: ${inventoryUrl}`);
-                
-                try {
-                    console.log('Sending request to Steam API for inventory...');
-                    const inventoryResponse = await axios.get(inventoryUrl);
-                    console.log('Received response from Steam API.');
-                    
-                    const inventoryData = inventoryResponse.data;
-                    if (!inventoryData || !inventoryData.items || inventoryData.items.length === 0) {
-                        console.log('No items found in the inventory data.');
-                        return interaction.reply({ content: 'No items found in the inventory.', ephemeral: true });
-                    }
-            
-                    console.log('Processing inventory data...');
-                    const totalItems = inventoryData.items.reduce((sum, item) => {
-                        console.log(`Adding ${item.count} items of ${item.markethashname}`);
-                        return sum + item.count;
-                    }, 0);
-            
-                    const totalCost = inventoryData.items.reduce((sum, item) => {
-                        const itemCost = item.pricelatest ? (item.count * item.pricelatest) : 0;
-                        console.log(`Calculating cost for ${item.markethashname}: ${item.count} x $${item.pricelatest ? item.pricelatest.toFixed(2) : 'N/A'} = $${itemCost.toFixed(2)}`);
-                        return sum + itemCost;
-                    }, 0);
-            
-                    console.log(`Total Items: ${totalItems}`);
-                    console.log(`Total Value: $${totalCost.toFixed(2)}`);
-            
-                    const embed = new EmbedBuilder()
-                        .setTitle(`Inventory for User: ${userid}`)
-                        .setDescription(game ? `Game: ${game}` : 'All Games')
-                        .addFields(
-                            { name: 'Total Items', value: `${totalItems}`, inline: true },
-                            { name: 'Total Value (USD)', value: `$${totalCost.toFixed(2)}`, inline: true }
-                        )
-                        .setColor(0x00AE86);
-            
-                    const maxItemsToShow = 10;
-                    inventoryData.items.slice(0, maxItemsToShow).forEach(item => {
-                        console.log(`Adding item to embed: ${item.markethashname}`);
-                        const itemValue = item.pricelatest ? (item.count * item.pricelatest).toFixed(2) : 'N/A';
-                        embed.addFields({
-                            name: item.markethashname,
-                            value: `${item.count} x $${item.pricelatest ? item.pricelatest.toFixed(2) : 'N/A'} = $${itemValue}`,
-                            inline: false
-                        });
-                    });
-            
-                    if (inventoryData.items.length > maxItemsToShow) {
-                        console.log('Inventory has more items than can be displayed.');
-                        embed.addFields({ name: '...and more', value: `Showing top ${maxItemsToShow} items.` });
-                    }
-            
-                    console.log('Sending embed response to Discord...');
-                    await interaction.reply({ embeds: [embed] });
-                    console.log('Response sent successfully.');
-                } catch (error) {
-                    console.error('Error fetching inventory from Steam API:', error.message);
-                    console.log('Error details:', error.stack);
-                    await interaction.reply({ content: `Failed to fetch inventory for user ID ${userid}: ${error.message}`, flags: InteractionResponseFlags });
+                const inventoryResponse = await axios.get(inventoryUrl);
+                const inventoryData = inventoryResponse.data;
+
+                if (!inventoryData?.items?.length) {
+                    return interaction.reply({ content: 'No items found in the inventory.', ephemeral: true });
                 }
+
+                const totalItems = inventoryData.items.reduce((sum, item) => sum + item.count, 0);
+                const totalCost = inventoryData.items.reduce((sum, item) => 
+                    sum + (item.pricelatest ? (item.count * item.pricelatest) : 0), 0);
+
+                const embed = new EmbedBuilder()
+                    .setTitle(`Inventory for SteamID: ${steamId64}`)
+                    .setDescription(game ? `Game: ${game}` : 'All Games')
+                    .addFields(
+                        { name: 'Total Items', value: `${totalItems}`, inline: true },
+                        { name: 'Total Value (USD)', value: `$${totalCost.toFixed(2)}`, inline: true }
+                    )
+                    .setColor(0x00AE86);
+
+                const maxItemsToShow = 10;
+                inventoryData.items.slice(0, maxItemsToShow).forEach(item => {
+                    const itemValue = item.pricelatest ? (item.count * item.pricelatest).toFixed(2) : 'N/A';
+                    embed.addFields({
+                        name: item.markethashname,
+                        value: `${item.count} x $${item.pricelatest?.toFixed(2) || 'N/A'} = $${itemValue}`,
+                        inline: false
+                    });
+                });
+
+                if (inventoryData.items.length > maxItemsToShow) {
+                    embed.addFields({ name: '...and more', value: `Showing top ${maxItemsToShow} items.` });
+                }
+
+                await interaction.reply({ embeds: [embed] });
             }
 
             if (subcommand === 'profile') {
-                console.log('Received `/steam profile` command')
-                
-                if (!userid) {
-                    return interaction.reply({ content: 'Please provide a valid Steam user ID.', ephemeral: true });
+                const profileUrl = `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${apiKey}&steamids=${steamId64}`;
+                const profileResponse = await axios.get(profileUrl);
+                const profileData = profileResponse.data.response.players[0];
+
+                if (!profileData) {
+                    return interaction.reply({ content: 'Steam profile not found.', ephemeral: true });
                 }
 
-                if (!process.env.STEAM_WEB_API_KEY) {
-                    return interaction.reply({ 
-                        content: 'Steam API is not configured', 
-                        ephemeral: true 
-                    });
-                }
-                
-                try {
-                    const steamId64 = userid.length === 17 ? userid : await convertToSteamID64(userid);
-                    const profileUrl = `http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${process.env.STEAM_WEB_API_KEY}&steamids=${steamId64}`;
-                    const profileResponse = await axios.get(profileUrl);
-                    const profileData = profileResponse.data.response.players[0];
-        
-                    const embed = new EmbedBuilder()
-                    .setTitle(`Steam Profile: ${profileData.personaname || 'Unknown'}`)
+                const statusMap = {
+                    0: 'Offline',
+                    1: 'Online',
+                    2: 'Busy',
+                    3: 'Away',
+                    4: 'Snooze',
+                    5: 'Looking to trade',
+                    6: 'Looking to play'
+                };
+
+                const embed = new EmbedBuilder()
+                    .setTitle(`Steam Profile: ${profileData.personaname}`)
+                    .setURL(profileData.profileurl)
                     .setThumbnail(profileData.avatarfull)
                     .addFields(
-                        { name: 'Steam ID', value: profileData.steamid, inline: true },
-                        { name: 'Profile URL', value: `[Link](${profileData.profileurl})`, inline: false },
-                        { name: 'Status', value: profileData.personastate === 1 ? 'Online' : 'Offline', inline: true }
+                        { name: 'Status', value: statusMap[profileData.personastate] || 'Unknown', inline: true },
+                        { name: 'Created', value: profileData.timecreated ? new Date(profileData.timecreated * 1000).toLocaleDateString() : 'Unknown', inline: true },
+                        { name: 'Last Online', value: profileData.lastlogoff ? new Date(profileData.lastlogoff * 1000).toLocaleString() : 'Unknown', inline: true },
+                        { name: 'SteamID64', value: profileData.steamid, inline: false }
                     )
                     .setColor(0x00AE86);
-                
-                    await interaction.reply({ embeds: [embed] });
-                } catch (error) {
-                    console.error('Steam API Error:', error.response?.data || error.message);
-                    await interaction.reply({ 
-                        content: `Failed to fetch profile: ${error.response?.data?.error || error.message}`,
-                        ephemeral: true 
+
+                if (profileData.gameextrainfo) {
+                    embed.addFields({ 
+                        name: 'Currently Playing', 
+                        value: profileData.gameextrainfo, 
+                        inline: true 
                     });
                 }
+
+                await interaction.reply({ embeds: [embed] });
             }
         } catch (error) {
-            console.error(`Error fetching Steam data: ${error.message}`);
-            await interaction.reply({ content: `Failed to fetch data for user ID ${userid}: ${error.message}`, ephemeral: true });
+            console.error('Steam Command Error:', error);
+            await interaction.reply({ 
+                content: `Error: ${error.message}`,
+                ephemeral: true 
+            });
         }
-    },
+    }
 };
