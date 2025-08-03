@@ -2,6 +2,12 @@ const { SlashCommandBuilder, EmbedBuilder, InteractionResponseFlags } = require(
 const axios = require('axios');
 require('dotenv').config();
 
+async function convertToSteamID64(id) {
+    // Add conversion logic if needed
+    // For now just return as-is assuming it's already 64-bit
+    return id;
+}
+
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('steam')
@@ -112,40 +118,37 @@ module.exports = {
                 if (!userid) {
                     return interaction.reply({ content: 'Please provide a valid Steam user ID.', ephemeral: true });
                 }
+
+                if (!process.env.STEAM_WEB_API_KEY) {
+                    return interaction.reply({ 
+                        content: 'Steam API is not configured', 
+                        ephemeral: true 
+                    });
+                }
                 
                 try {
-                    const profileUrl = `https://www.steamwebapi.com/steam/api/profile?key=${process.env.STEAM_WEB_API_KEY}&steam_id=${userid}`;
+                    const steamId64 = userid.length === 17 ? userid : await convertToSteamID64(userid);
+                    const profileUrl = `http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${process.env.STEAM_WEB_API_KEY}&steamids=${steamId64}`;
                     const profileResponse = await axios.get(profileUrl);
-                    const profileData = profileResponse.data;
-        
-                    console.log(profileData);
+                    const profileData = profileResponse.data.response.players[0];
         
                     const embed = new EmbedBuilder()
-                        .setTitle(`Steam Profile: ${profileData.personaname || 'Unknown'}`)
-                        .setThumbnail(profileData.avatarfull)
-                        .addFields(
-                            { name: 'Real Name', value: profileData.realname || 'N/A', inline: true },
-                            { name: 'Steam ID', value: profileData.steamid, inline: true },
-                            { name: 'Profile URL', value: `[Link](${profileData.profileurl})`, inline: false },
-                            { name: 'Community Visibility', value: profileData.communityvisibilitymessage, inline: true },
-                            { name: 'Account Creation Date', value: `<t:${Math.floor(profileData.timecreated)}:F>`, inline: true }
-                        )
-                        .setColor(0x00AE86);
-        
-                    if (profileData.mostplayedgames && profileData.mostplayedgames.length > 0) {
-                        const gameDetails = profileData.mostplayedgames
-                            .map(
-                                (game) =>
-                                    `**[${game.gamename}](${game.gamelink})**\n- Total Time: ${game.hoursonrecord} hours\n- Last 2 Weeks: ${game.playtimelast2weeks || 0} hours`
-                            )
-                            .join('\n\n');
-                        embed.addFields({ name: 'Recent Activity', value: gameDetails, inline: false });
-                    }
+                    .setTitle(`Steam Profile: ${profileData.personaname || 'Unknown'}`)
+                    .setThumbnail(profileData.avatarfull)
+                    .addFields(
+                        { name: 'Steam ID', value: profileData.steamid, inline: true },
+                        { name: 'Profile URL', value: `[Link](${profileData.profileurl})`, inline: false },
+                        { name: 'Status', value: profileData.personastate === 1 ? 'Online' : 'Offline', inline: true }
+                    )
+                    .setColor(0x00AE86);
                 
                     await interaction.reply({ embeds: [embed] });
                 } catch (error) {
-                    console.error('Error fetching Steam profile:', error.message);
-                    await interaction.reply({ content: `Failed to fetch profile for user ID ${userid}: ${error.message}`, ephemeral: true });
+                    console.error('Steam API Error:', error.response?.data || error.message);
+                    await interaction.reply({ 
+                        content: `Failed to fetch profile: ${error.response?.data?.error || error.message}`,
+                        ephemeral: true 
+                    });
                 }
             }
         } catch (error) {
