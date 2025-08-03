@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const axios = require('axios');
 
 const youtubeApiKey = process.env.YOUTUBE_API_KEY;
@@ -27,6 +27,15 @@ module.exports = {
                         .setRequired(true))),
 
     async execute(interaction) {
+        // Check if API key is available
+        if (!youtubeApiKey) {
+            console.error('YouTube API key is not configured');
+            return interaction.reply({ 
+                content: 'YouTube functionality is currently unavailable. Ping me to fix it.', 
+                ephemeral: false
+            });
+        }
+
         const url = interaction.options.getString('url');
         const subcommand = interaction.options.getSubcommand();
 
@@ -57,28 +66,40 @@ module.exports = {
                     }
                 });
 
-                const video = response.data.items[0];
-                if (!video) {
+                if (response.data.items.length === 0) {
                     return interaction.reply({ content: 'Video not found.', ephemeral: true });
                 }
 
+                const video = response.data.items[0];
                 const formattedDuration = formatDuration(video.contentDetails.duration);
-                return interaction.reply({
-                    embeds: [{
-                        title: video.snippet.title,
-                        url: `https://www.youtube.com/watch?v=${videoId}`,
-                        description: video.snippet.description.substring(0, 200) + '...',
-                        fields: [
-                            { name: 'Channel', value: video.snippet.channelTitle, inline: true },
-                            { name: 'Duration', value: formattedDuration, inline: true },
-                            { name: 'Views', value: video.statistics.viewCount, inline: true },
-                        ],
-                        thumbnail: { url: video.snippet.thumbnails.high.url },
-                    }]
-                });
+                
+                const embed = new EmbedBuilder()
+                    .setTitle(video.snippet.title)
+                    .setURL(`https://www.youtube.com/watch?v=${videoId}`)
+                    .setDescription(video.snippet.description.substring(0, 200) + (video.snippet.description.length > 200 ? '...' : ''))
+                    .addFields(
+                        { name: 'Channel', value: video.snippet.channelTitle, inline: true },
+                        { name: 'Duration', value: formattedDuration, inline: true },
+                        { name: 'Views', value: parseInt(video.statistics.viewCount).toLocaleString(), inline: true }
+                    )
+                    .setThumbnail(video.snippet.thumbnails.high.url)
+                    .setColor('#FF0000');
+
+                return interaction.reply({ embeds: [embed] });
             } catch (error) {
-                console.error('Error fetching video information:', error);
-                return interaction.reply({ content: 'An error occurred while fetching video information.', ephemeral: true });
+                console.error('YouTube API Error:', error.response?.data || error.message);
+                
+                let errorMessage = 'An error occurred while fetching video information.';
+                if (error.response?.status === 403) {
+                    errorMessage = 'YouTube API access denied. This might be due to invalid API key or quota limits.';
+                } else if (error.response?.status === 404) {
+                    errorMessage = 'Video not found.';
+                }
+
+                return interaction.reply({ 
+                    content: errorMessage, 
+                    ephemeral: true 
+                });
             }
         }
 
@@ -95,13 +116,13 @@ module.exports = {
                                 key: youtubeApiKey,
                                 part: 'snippet',
                                 q: username,
-                                type: 'channel'
+                                type: 'channel',
+                                maxResults: 1
                             }
                         });
 
-                        const channelItem = searchResponse.data.items[0];
-                        if (channelItem) {
-                            channelId = channelItem.id.channelId;
+                        if (searchResponse.data.items.length > 0) {
+                            channelId = searchResponse.data.items[0].id.channelId;
                         }
                     }
                 } else {
@@ -123,26 +144,37 @@ module.exports = {
                     }
                 });
 
-                const channel = response.data.items[0];
-                if (!channel) {
+                if (response.data.items.length === 0) {
                     return interaction.reply({ content: 'Channel not found.', ephemeral: true });
                 }
 
-                return interaction.reply({
-                    embeds: [{
-                        title: channel.snippet.title,
-                        description: channel.snippet.description.substring(0, 200) + '...',
-                        fields: [
-                            { name: 'Subscribers', value: channel.statistics.subscriberCount, inline: true },
-                            { name: 'Total Views', value: channel.statistics.viewCount, inline: true },
-                            { name: 'Videos', value: channel.statistics.videoCount, inline: true },
-                        ],
-                        thumbnail: { url: channel.snippet.thumbnails.high.url },
-                    }]
-                });
+                const channel = response.data.items[0];
+                const embed = new EmbedBuilder()
+                    .setTitle(channel.snippet.title)
+                    .setDescription(channel.snippet.description.substring(0, 200) + (channel.snippet.description.length > 200 ? '...' : ''))
+                    .addFields(
+                        { name: 'Subscribers', value: parseInt(channel.statistics.subscriberCount).toLocaleString(), inline: true },
+                        { name: 'Total Views', value: parseInt(channel.statistics.viewCount).toLocaleString(), inline: true },
+                        { name: 'Videos', value: parseInt(channel.statistics.videoCount).toLocaleString(), inline: true }
+                    )
+                    .setThumbnail(channel.snippet.thumbnails.high.url)
+                    .setColor('#FF0000');
+
+                return interaction.reply({ embeds: [embed] });
             } catch (error) {
-                console.error('Error fetching channel information:', error);
-                return interaction.reply({ content: 'An error occurred while fetching channel information.', ephemeral: true });
+                console.error('YouTube API Error:', error.response?.data || error.message);
+                
+                let errorMessage = 'An error occurred while fetching channel information.';
+                if (error.response?.status === 403) {
+                    errorMessage = 'YouTube API access denied. This might be due to invalid API key or quota limits.';
+                } else if (error.response?.status === 404) {
+                    errorMessage = 'Channel not found.';
+                }
+
+                return interaction.reply({ 
+                    content: errorMessage, 
+                    ephemeral: true 
+                });
             }
         }
     },
