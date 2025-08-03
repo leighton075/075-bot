@@ -26,19 +26,18 @@
   },
   "homepage": "https://github.com/leighton075/075-bot#readme",
   "dependencies": {
-    "@discordjs/rest": "^2.4.2",
     "@discordjs/voice": "^0.18.0",
-    "@discordjs/ws": "^2.0.1",
     "apify-client": "^2.11.1",
     "axios": "^1.7.9",
-    "canvas": "^3.1.0",
     "discord.js": "^14.17.3",
-    "dotenv": "^16.4.7",
-    "formidable": "^3.5.2",
+    "dotenv": "^16.6.1",
+    "express": "^5.1.0",
+    "formidable": "^3.5.4",
     "mysql2": "^3.12.0",
+    "node-fetch": "^3.3.2",
     "openai": "^4.82.0",
-    "puppeteer": "^24.1.1",
     "spotify-web-api-node": "^5.0.2",
+    "superagent": "^10.2.3",
     "undici": "^7.2.3"
   }
 }
