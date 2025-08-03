@@ -151,6 +151,7 @@ module.exports = {
                 const channel = response.data.items[0];
                 const embed = new EmbedBuilder()
                     .setTitle(channel.snippet.title)
+                    .setURL(`https://www.youtube.com/channel/${channel.id}`)
                     .setDescription(channel.snippet.description.substring(0, 200) + (channel.snippet.description.length > 200 ? '...' : ''))
                     .addFields(
                         { name: 'Subscribers', value: parseInt(channel.statistics.subscriberCount).toLocaleString(), inline: true },
