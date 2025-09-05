@@ -11,6 +11,14 @@ module.exports = {
                 .setRequired(false)),
 
     async execute(interaction) {
+        // Check if the command is being used in a guild
+        if (!interaction.guild) {
+            return interaction.reply({ 
+                content: 'This command can only be used in a server, not in DMs.', 
+                ephemeral: true 
+            });
+        }
+
         const user = interaction.options.getUser('user') || interaction.user;
 
         try {
