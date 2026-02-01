@@ -13,6 +13,7 @@ module.exports = {
             .setRequired(true)
             .addChoices(
                 { name: 'bruh', value: 'bruh' },
+                { name: 'asmr', value: 'asmr' },
             )),
 
     async execute(interaction) {
