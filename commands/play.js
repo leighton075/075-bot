@@ -65,7 +65,32 @@ module.exports = {
                 connection.destroy();
             });
 
+            // Check if the bot is alone and stop playing if so
+            const checkIfAlone = () => {
+                const members = voiceChannel.members.filter(member => !member.user.bot);
+                if (members.size === 0) {
+                    player.stop();
+                    connection.destroy();
+                }
+            };
+
+            // Listen for member leave events
+            const memberUpdateListener = (oldState, newState) => {
+                // Check if a user left the voice channel
+                if (oldState.channelId === voiceChannel.id && newState.channelId !== voiceChannel.id) {
+                    checkIfAlone();
+                }
+            };
+
+            interaction.guild.client.on('voiceStateUpdate', memberUpdateListener);
+
+            // Cleanup listeners when audio finishes or connection disconnects
+            player.on(AudioPlayerStatus.Idle, () => {
+                interaction.guild.client.removeListener('voiceStateUpdate', memberUpdateListener);
+            });
+
             connection.on(VoiceConnectionStatus.Disconnected, () => {
+                interaction.guild.client.removeListener('voiceStateUpdate', memberUpdateListener);
                 connection.destroy();
             });
 
