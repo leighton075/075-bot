@@ -29,7 +29,7 @@
     "@discordjs/voice": "^0.18.0",
     "apify-client": "^2.11.1",
     "axios": "^1.7.9",
-    "discord.js": "^14.17.3",
+    "discord.js": "^13.17.1",
     "dotenv": "^16.6.1",
     "express": "^5.1.0",
     "formidable": "^3.5.4",
