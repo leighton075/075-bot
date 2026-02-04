@@ -22,7 +22,7 @@ const client = new Client({
 // ==========================
 // Minecraft Server Monitoring
 // ==========================
-const mcChannelId = '1319595051160047627'; // Replace with the actual channel ID for MC status updates
+const mcChannelId = '1331450221435289603';
 let lastServerOnline = null;
 
 // ==========================
