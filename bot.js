@@ -181,13 +181,53 @@ client.once('ready', async () => {
             if (lastServerOnline !== null && lastServerOnline !== currentOnline) {
                 const channel = client.channels.cache.get(mcChannelId);
                 if (channel) {
+                    let statusMessage = '';
+                    let embedColor = currentOnline ? 0x00FF00 : 0xFF0000;
+                    let fields = [
+                        { name: 'IP', value: data.ip || 'Unknown', inline: true },
+                        { name: 'Port', value: data.port ? data.port.toString() : 'Unknown', inline: true }
+                    ];
+
+                    if (currentOnline) {
+                        statusMessage = '🟢 Server is now Online';
+                        if (data.version) fields.push({ name: 'Version', value: data.version, inline: true });
+                        if (data.players) fields.push({ name: 'Players', value: `${data.players.online}/${data.players.max}`, inline: true });
+                    } else {
+                        // Determine offline reason
+                        let offlineReason = 'Server offline';
+                        if (data.debug) {
+                            if (!data.debug.srv) {
+                                offlineReason = 'Server not found (DNS/SRV record issue)';
+                                embedColor = 0xFFA500; // Orange for DNS issues
+                            } else if (!data.debug.ping && !data.debug.query) {
+                                offlineReason = 'Server not responding (possibly stopped, crashed, or network issue)';
+                            } else if (data.debug.querymismatch) {
+                                offlineReason = 'Port mismatch detected (query port differs from server port)';
+                            } else if (data.debug.ipinsrv) {
+                                offlineReason = 'SRV record contains IP (should use hostname)';
+                            } else if (data.debug.cnameinsrv) {
+                                offlineReason = 'SRV record contains CNAME (should use A/AAAA records)';
+                            }
+                        }
+                        statusMessage = `🔴 ${offlineReason}`;
+                        console.log(`[MC MONITOR] Offline reason: ${offlineReason}`);
+
+                        // Add debug info fields
+                        if (data.debug) {
+                            fields.push(
+                                { name: 'Debug - Ping', value: data.debug.ping ? '✅' : '❌', inline: true },
+                                { name: 'Debug - Query', value: data.debug.query ? '✅' : '❌', inline: true },
+                                { name: 'Debug - SRV', value: data.debug.srv ? '✅' : '❌', inline: true }
+                            );
+                        }
+                    }
+
                     const embed = new EmbedBuilder()
                         .setTitle('Minecraft Server Status Update')
-                        .setColor(currentOnline ? 0x00FF00 : 0xFF0000)
+                        .setColor(embedColor)
                         .addFields(
-                            { name: 'Status', value: currentOnline ? '🟢 Server is now Online' : '🔴 Server is now Offline', inline: false },
-                            { name: 'IP', value: data.ip || 'Unknown', inline: true },
-                            { name: 'Port', value: data.port ? data.port.toString() : 'Unknown', inline: true }
+                            { name: 'Status', value: statusMessage, inline: false },
+                            ...fields
                         )
                         .setTimestamp();
 
