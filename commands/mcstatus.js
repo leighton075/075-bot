@@ -7,7 +7,7 @@ module.exports = {
         .setDescription('Force refresh and post the current Minecraft server status'),
 
     async execute(interaction, client) {
-        const mcChannelId = '1319595051160047627'; // The channel to post updates
+        const mcChannelId = '1331450221435289603'; // The channel to post updates
         const serverAddress = '139.99.189.213:25594';
         const apiUrl = `https://api.mcsrvstat.us/3/${serverAddress}`;
 
