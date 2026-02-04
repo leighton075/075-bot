@@ -1,6 +1,7 @@
 const { Client, GatewayIntentBits, Collection, AuditLogEvent, EmbedBuilder, Events } = require('discord.js');
 const { clientId, guildId, token } = require('./config.json');
 const SpotifyWebApi = require('spotify-web-api-node');
+const axios = require('axios');
 const fs = require('node:fs');
 const path = require('path');
 require('dotenv').config();
@@ -17,6 +18,12 @@ const client = new Client({
         GatewayIntentBits.MessageContent,
     ],
 });
+
+// ==========================
+// Minecraft Server Monitoring
+// ==========================
+const mcChannelId = '1319595051160047627'; // Replace with the actual channel ID for MC status updates
+let lastServerOnline = null;
 
 // ==========================
 // Spotify Login & Auth
@@ -159,6 +166,40 @@ client.once('ready', async () => {
     } catch (err) {
         console.error(`[ERROR] Error fetching playlist tracks: ${err}`);
     }
+
+    // Minecraft Server Monitoring
+    setInterval(async () => {
+        try {
+            const response = await axios.get('https://api.mcsrvstat.us/3/139.99.189.213:25594', {
+                headers: {
+                    'User-Agent': 'Discord Bot - 075-bot'
+                }
+            });
+            const data = response.data;
+            const currentOnline = data.online;
+
+            if (lastServerOnline !== null && lastServerOnline !== currentOnline) {
+                const channel = client.channels.cache.get(mcChannelId);
+                if (channel) {
+                    const embed = new EmbedBuilder()
+                        .setTitle('Minecraft Server Status Update')
+                        .setColor(currentOnline ? 0x00FF00 : 0xFF0000)
+                        .addFields(
+                            { name: 'Status', value: currentOnline ? '🟢 Server is now Online' : '🔴 Server is now Offline', inline: false },
+                            { name: 'IP', value: data.ip || 'Unknown', inline: true },
+                            { name: 'Port', value: data.port ? data.port.toString() : 'Unknown', inline: true }
+                        )
+                        .setTimestamp();
+
+                    await channel.send({ embeds: [embed] });
+                }
+            }
+
+            lastServerOnline = currentOnline;
+        } catch (error) {
+            console.error('Error checking server status:', error);
+        }
+    }, 60000); // Check every 60 seconds
 });
 
 // ==========================
