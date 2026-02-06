@@ -27,7 +27,7 @@ module.exports = {
 
         try {
             if (sub === 'testalert') {
-                // Force send the latest update to the alert channel, even if not new
+                // Force send the latest Steam news post to the alert channel, even if not new
                 const fs = require('fs');
                 const path = require('path');
                 const alertFile = path.join(__dirname, '../helldivers_alert.json');
@@ -43,55 +43,54 @@ module.exports = {
                 if (!alertData.channelId) {
                     return interaction.editReply({ content: 'No alert channel set. Use /helldivers alert in a channel first.', ephemeral: true });
                 }
-                const res = await axios.get(`${API_BASE}/war/news`).catch(() => null);
-                const news = res && Array.isArray(res.data) ? res.data : [];
-                const latest = news.length ? news[news.length - 1] : null;
-                if (!latest) {
-                    return interaction.editReply({ content: 'No updates found from the API.', ephemeral: true });
+                // Fetch Steam news RSS
+                const xml = await axios.get('https://store.steampowered.com/feeds/news/app/553850/').then(r => r.data).catch(() => null);
+                if (!xml) {
+                    return interaction.editReply({ content: 'Could not fetch Steam news.', ephemeral: true });
                 }
+                // Parse latest item
+                const match = xml.match(/<item>([\s\S]*?)<\/item>/);
+                if (!match) {
+                    return interaction.editReply({ content: 'No news found in Steam feed.', ephemeral: true });
+                }
+                const item = match[1];
+                const title = (item.match(/<title><!\[CDATA\[(.*?)\]\]><\/title>/) || [])[1] || 'Helldivers Update';
+                const link = (item.match(/<link>(.*?)<\/link>/) || [])[1] || 'https://store.steampowered.com/news/app/553850';
+                const pubDate = (item.match(/<pubDate>(.*?)<\/pubDate>/) || [])[1] || '';
+                const desc = (item.match(/<description><!\[CDATA\[(.*?)\]\]><\/description>/) || [])[1] || '';
+                const msg = `**${title}**\n${pubDate}\n${desc.substring(0, 1800)}\nPatch notes: ${link}`;
                 const channel = interaction.client.channels.cache.get(alertData.channelId);
                 if (!channel) {
                     return interaction.editReply({ content: 'Alert channel not found. Set it again with /helldivers alert.', ephemeral: true });
                 }
-                // Try to find a patch notes link in the message or add a default
-                let patchLink = '';
-                if (latest.links && Array.isArray(latest.links) && latest.links.length) {
-                    patchLink = latest.links[0];
-                } else if (latest.message && latest.message.match(/https?:\/\/[\w./?=&%-]+/)) {
-                    patchLink = latest.message.match(/https?:\/\/[\w./?=&%-]+/)[0];
-                } else {
-                    patchLink = 'https://store.steampowered.com/news/app/553850';
-                }
-                const time = latest.time ? new Date(latest.time).toUTCString() : '';
-                const msg = `**Helldivers Update!**\n${time}\n${latest.message || JSON.stringify(latest).slice(0, 200)}\nPatch notes: ${patchLink}`;
                 await channel.send(msg);
                 return interaction.editReply({ content: `Test alert sent to <#${alertData.channelId}>.`, ephemeral: true });
             }
 
             if (sub === 'updates') {
-                // Show the latest news/update from the API, always include patch notes link if possible
-                const res = await axios.get(`${API_BASE}/war/news`);
-                const news = Array.isArray(res.data) ? res.data : [];
-                const latest = news.length ? news[news.length - 1] : null;
+                // Show the latest Steam news post
+                const xml = await axios.get('https://store.steampowered.com/feeds/news/app/553850/').then(r => r.data).catch(() => null);
                 const embed = new EmbedBuilder()
-                    .setTitle('Helldivers — Latest Update')
+                    .setTitle('Helldivers — Latest Steam News')
                     .setColor('#f5b041')
-                    .setFooter({ text: 'Source: Helldivers Training Manual' })
+                    .setFooter({ text: 'Source: Steam News' })
                     .setTimestamp();
-                if (!latest) {
-                    embed.setDescription('No updates found.');
-                } else {
-                    const time = latest.time ? new Date(latest.time).toUTCString() : '';
-                    let patchLink = '';
-                    if (latest.links && Array.isArray(latest.links) && latest.links.length) {
-                        patchLink = latest.links[0];
-                    } else if (latest.message && latest.message.match(/https?:\/\/[\w./?=&%-]+/)) {
-                        patchLink = latest.message.match(/https?:\/\/[\w./?=&%-]+/)[0];
-                    } else {
-                        patchLink = 'https://store.steampowered.com/news/app/553850';
-                    }
-                    embed.setDescription(`**${time}**\n${latest.message || JSON.stringify(latest).slice(0, 200)}\nPatch notes: ${patchLink}`);
+                if (!xml) {
+                    embed.setDescription('Could not fetch Steam news.');
+                    return interaction.editReply({ embeds: [embed] });
                 }
+                const match = xml.match(/<item>([\s\S]*?)<\/item>/);
+                if (!match) {
+                    embed.setDescription('No news found in Steam feed.');
+                    return interaction.editReply({ embeds: [embed] });
+                }
+                const item = match[1];
+                const title = (item.match(/<title><!\[CDATA\[(.*?)\]\]><\/title>/) || [])[1] || 'Helldivers Update';
+                const link = (item.match(/<link>(.*?)<\/link>/) || [])[1] || 'https://store.steampowered.com/news/app/553850';
+                const pubDate = (item.match(/<pubDate>(.*?)<\/pubDate>/) || [])[1] || '';
+                const desc = (item.match(/<description><!\[CDATA\[(.*?)\]\]><\/description>/) || [])[1] || '';
+                embed.setTitle(title);
+                embed.setDescription(`**${pubDate}**\n${desc.substring(0, 1800)}\nPatch notes: ${link}`);
                 return interaction.editReply({ embeds: [embed] });
             }
 
