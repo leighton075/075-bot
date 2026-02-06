@@ -60,7 +60,7 @@ module.exports = {
                 } else if (latest.message && latest.message.match(/https?:\/\/[\w./?=&%-]+/)) {
                     patchLink = latest.message.match(/https?:\/\/[\w./?=&%-]+/)[0];
                 } else {
-                    patchLink = 'https://helldiverstrainingmanual.com/patch-notes';
+                    patchLink = 'https://store.steampowered.com/news/app/553850';
                 }
                 const time = latest.time ? new Date(latest.time).toUTCString() : '';
                 const msg = `**Helldivers Update!**\n${time}\n${latest.message || JSON.stringify(latest).slice(0, 200)}\nPatch notes: ${patchLink}`;
@@ -88,7 +88,7 @@ module.exports = {
                     } else if (latest.message && latest.message.match(/https?:\/\/[\w./?=&%-]+/)) {
                         patchLink = latest.message.match(/https?:\/\/[\w./?=&%-]+/)[0];
                     } else {
-                        patchLink = 'https://helldiverstrainingmanual.com/patch-notes';
+                        patchLink = 'https://store.steampowered.com/news/app/553850';
                     }
                     embed.setDescription(`**${time}**\n${latest.message || JSON.stringify(latest).slice(0, 200)}\nPatch notes: ${patchLink}`);
                 }
