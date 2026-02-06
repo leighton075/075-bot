@@ -14,9 +14,7 @@ module.exports = {
             sub.setName('updates')
                 .setDescription('Show the latest Helldivers game update/news'))
         // Removed alert subcommand
-        .addSubcommand(sub =>
-            sub.setName('testalert')
-                .setDescription('Force a Helldivers update notification in the alert channel (for testing)')),
+        // Removed testalert subcommand
 
     async execute(interaction) {
         await interaction.deferReply();
@@ -24,58 +22,14 @@ module.exports = {
         const sub = interaction.options.getSubcommand();
 
         try {
-            if (sub === 'testalert') {
-                // Force send the latest Steam news post as an embed to the alert channel, even if not new
-                const fs = require('fs');
-                const path = require('path');
-                const alertFile = path.join(__dirname, '../helldivers_alert.json');
-                let alertData = null;
-                if (!fs.existsSync(alertFile)) {
-                    return interaction.editReply({ content: 'No alert channel set. (helldivers_alert.json missing)', ephemeral: true });
-                }
-                try {
-                    alertData = JSON.parse(fs.readFileSync(alertFile, 'utf8'));
-                } catch (e) {
-                    return interaction.editReply({ content: 'Could not read alert file.', ephemeral: true });
-                }
-                if (!alertData.channelId) {
-                    return interaction.editReply({ content: 'No alert channel set. (channelId missing)', ephemeral: true });
-                }
-                // Fetch Steam news RSS
-                const xml = await axios.get('https://store.steampowered.com/feeds/news/app/553850/').then(r => r.data).catch(() => null);
-                if (!xml) {
-                    return interaction.editReply({ content: 'Could not fetch Steam news.', ephemeral: true });
-                }
-                // Parse latest item
-                const match = xml.match(/<item>([\s\S]*?)<\/item>/);
-                if (!match) {
-                    return interaction.editReply({ content: 'No news found in Steam feed.', ephemeral: true });
-                }
-                const item = match[1];
-                const title = (item.match(/<title><!\[CDATA\[(.*?)\]\]><\/title>/) || [])[1] || 'Helldivers Update';
-                const link = (item.match(/<link>(.*?)<\/link>/) || [])[1] || 'https://store.steampowered.com/news/app/553850';
-                const pubDate = (item.match(/<pubDate>(.*?)<\/pubDate>/) || [])[1] || '';
-                const desc = (item.match(/<description><!\[CDATA\[(.*?)\]\]><\/description>/) || [])[1] || '';
-                const embed = new EmbedBuilder()
-                    .setTitle(title)
-                    .setColor('#f5b041')
-                    .setFooter({ text: 'Source: Steam News' })
-                    .setTimestamp()
-                    .setDescription(`**${pubDate}**\n${desc.substring(0, 1800)}\nPatch notes: ${link}`);
-                const channel = interaction.client.channels.cache.get(alertData.channelId);
-                if (!channel) {
-                    return interaction.editReply({ content: 'Alert channel not found. (channelId invalid)', ephemeral: true });
-                }
-                await channel.send({ embeds: [embed] });
-                return interaction.editReply({ content: `Test alert embed sent to <#${alertData.channelId}>.`, ephemeral: true });
-            }
+            // Removed testalert subcommand
 
             if (sub === 'updates') {
-                // Show the latest Steam news post
+                // Show the latest Steam news post, green embed, clean patch notes link
                 const xml = await axios.get('https://store.steampowered.com/feeds/news/app/553850/').then(r => r.data).catch(() => null);
                 const embed = new EmbedBuilder()
                     .setTitle('Helldivers — Latest Steam News')
-                    .setColor('#f5b041')
+                    .setColor('#43b581') // Discord green
                     .setFooter({ text: 'Source: Steam News' })
                     .setTimestamp();
                 if (!xml) {
@@ -89,7 +43,12 @@ module.exports = {
                 }
                 const item = match[1];
                 const title = (item.match(/<title><!\[CDATA\[(.*?)\]\]><\/title>/) || [])[1] || 'Helldivers Update';
-                const link = (item.match(/<link>(.*?)<\/link>/) || [])[1] || 'https://store.steampowered.com/news/app/553850';
+                // Patch notes link: try to extract a valid URL from the link field, stripping CDATA if present
+                let link = (item.match(/<link>(.*?)<\/link>/) || [])[1] || 'https://store.steampowered.com/news/app/553850';
+                link = link.replace(/^!\[CDATA\[|\]\]$/g, '').replace(/^\s+|\s+$/g, '');
+                // If still wrapped in CDATA, remove
+                if (link.startsWith('![CDATA[')) link = link.replace(/^!\[CDATA\[|\]\]$/g, '');
+                if (link.startsWith('<![CDATA[')) link = link.replace(/^<!\[CDATA\[|\]\]>$/g, '');
                 const pubDate = (item.match(/<pubDate>(.*?)<\/pubDate>/) || [])[1] || '';
                 const desc = (item.match(/<description><!\[CDATA\[(.*?)\]\]><\/description>/) || [])[1] || '';
                 embed.setTitle(title);
