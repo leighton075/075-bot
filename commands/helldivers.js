@@ -12,7 +12,7 @@ module.exports = {
                 .setDescription('Show a real-time galaxy map with active planets, liberation trends, and player counts'))
         .addSubcommand(sub =>
             sub.setName('updates')
-                .setDescription('Show the latest Helldivers game update/news'))
+                .setDescription('Show the latest Helldivers game update/news')),
         // Removed alert subcommand
         // Removed testalert subcommand
 
