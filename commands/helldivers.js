@@ -52,8 +52,11 @@ module.exports = {
                 const pubDate = (item.match(/<pubDate>(.*?)<\/pubDate>/) || [])[1] || '';
                 const desc = (item.match(/<description><!\[CDATA\[(.*?)\]\]><\/description>/) || [])[1] || '';
                 embed.setTitle(title);
-                embed.setDescription(`**${pubDate}**\n${desc.substring(0, 1800)}\nPatch notes: ${link}`);
-                return interaction.editReply({ embeds: [embed] });
+                embed.setDescription(`**${pubDate}**\n${desc.substring(0, 1800)}`);
+                // Send embed, then send link as a separate message for proper preview
+                await interaction.editReply({ embeds: [embed] });
+                await interaction.followUp({ content: link, ephemeral: false });
+                return;
             }
 
             if (sub === 'alert') {
