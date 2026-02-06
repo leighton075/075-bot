@@ -53,9 +53,8 @@ module.exports = {
                 const desc = (item.match(/<description><!\[CDATA\[(.*?)\]\]><\/description>/) || [])[1] || '';
                 embed.setTitle(title);
                 embed.setDescription(`**${pubDate}**\n${desc.substring(0, 1800)}`);
-                // Send embed, then send link as a separate message for proper preview
-                await interaction.editReply({ embeds: [embed] });
-                await interaction.followUp({ content: link, ephemeral: false });
+                // Send embed and link together in one message for proper preview
+                await interaction.editReply({ embeds: [embed], content: link });
                 return;
             }
 
