@@ -13,9 +13,7 @@ module.exports = {
         .addSubcommand(sub =>
             sub.setName('updates')
                 .setDescription('Show the latest Helldivers game update/news'))
-        .addSubcommand(sub =>
-            sub.setName('alert')
-                .setDescription('Set up an alert for new Helldivers game updates in this channel'))
+        // Removed alert subcommand
         .addSubcommand(sub =>
             sub.setName('testalert')
                 .setDescription('Force a Helldivers update notification in the alert channel (for testing)')),
@@ -27,13 +25,13 @@ module.exports = {
 
         try {
             if (sub === 'testalert') {
-                // Force send the latest Steam news post to the alert channel, even if not new
+                // Force send the latest Steam news post as an embed to the alert channel, even if not new
                 const fs = require('fs');
                 const path = require('path');
                 const alertFile = path.join(__dirname, '../helldivers_alert.json');
                 let alertData = null;
                 if (!fs.existsSync(alertFile)) {
-                    return interaction.editReply({ content: 'No alert channel set. Use /helldivers alert in a channel first.', ephemeral: true });
+                    return interaction.editReply({ content: 'No alert channel set. (helldivers_alert.json missing)', ephemeral: true });
                 }
                 try {
                     alertData = JSON.parse(fs.readFileSync(alertFile, 'utf8'));
@@ -41,7 +39,7 @@ module.exports = {
                     return interaction.editReply({ content: 'Could not read alert file.', ephemeral: true });
                 }
                 if (!alertData.channelId) {
-                    return interaction.editReply({ content: 'No alert channel set. Use /helldivers alert in a channel first.', ephemeral: true });
+                    return interaction.editReply({ content: 'No alert channel set. (channelId missing)', ephemeral: true });
                 }
                 // Fetch Steam news RSS
                 const xml = await axios.get('https://store.steampowered.com/feeds/news/app/553850/').then(r => r.data).catch(() => null);
@@ -58,13 +56,18 @@ module.exports = {
                 const link = (item.match(/<link>(.*?)<\/link>/) || [])[1] || 'https://store.steampowered.com/news/app/553850';
                 const pubDate = (item.match(/<pubDate>(.*?)<\/pubDate>/) || [])[1] || '';
                 const desc = (item.match(/<description><!\[CDATA\[(.*?)\]\]><\/description>/) || [])[1] || '';
-                const msg = `**${title}**\n${pubDate}\n${desc.substring(0, 1800)}\nPatch notes: ${link}`;
+                const embed = new EmbedBuilder()
+                    .setTitle(title)
+                    .setColor('#f5b041')
+                    .setFooter({ text: 'Source: Steam News' })
+                    .setTimestamp()
+                    .setDescription(`**${pubDate}**\n${desc.substring(0, 1800)}\nPatch notes: ${link}`);
                 const channel = interaction.client.channels.cache.get(alertData.channelId);
                 if (!channel) {
-                    return interaction.editReply({ content: 'Alert channel not found. Set it again with /helldivers alert.', ephemeral: true });
+                    return interaction.editReply({ content: 'Alert channel not found. (channelId invalid)', ephemeral: true });
                 }
-                await channel.send(msg);
-                return interaction.editReply({ content: `Test alert sent to <#${alertData.channelId}>.`, ephemeral: true });
+                await channel.send({ embeds: [embed] });
+                return interaction.editReply({ content: `Test alert embed sent to <#${alertData.channelId}>.`, ephemeral: true });
             }
 
             if (sub === 'updates') {
