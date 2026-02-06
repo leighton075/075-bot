@@ -8,16 +8,17 @@ module.exports = {
         .setName('helldivers')
         .setDescription('Helldivers 2 info from the Helldivers Training Manual API')
         .addSubcommand(sub =>
-            sub.setName('stats')
-                .setDescription('Show current live war stats (active campaign planets)')
-                .addIntegerOption(opt => opt.setName('limit').setDescription('How many planets to list').setRequired(false)))
-        .addSubcommand(sub =>
-            sub.setName('drops')
-                .setDescription('Show recent in-game news / drops (latest messages)')
-                .addIntegerOption(opt => opt.setName('limit').setDescription('How many news items to show (max 10)').setRequired(false)))
-        .addSubcommand(sub =>
             sub.setName('map')
-                .setDescription('Show a real-time galaxy map with active planets, liberation trends, and player counts')),
+                .setDescription('Show a real-time galaxy map with active planets, liberation trends, and player counts'))
+        .addSubcommand(sub =>
+            sub.setName('updates')
+                .setDescription('Show the latest Helldivers game update/news'))
+        .addSubcommand(sub =>
+            sub.setName('alert')
+                .setDescription('Set up an alert for new Helldivers game updates in this channel'))
+        .addSubcommand(sub =>
+            sub.setName('testalert')
+                .setDescription('Force a Helldivers update notification in the alert channel (for testing)')),
 
     async execute(interaction) {
         await interaction.deferReply();
@@ -25,70 +26,107 @@ module.exports = {
         const sub = interaction.options.getSubcommand();
 
         try {
-            if (sub === 'stats') {
-                const limit = interaction.options.getInteger('limit') || 10;
-                const res = await axios.get(`${API_BASE}/war/campaign`);
-                const planets = Array.isArray(res.data) ? res.data : [];
-
-                const embed = new EmbedBuilder()
-                    .setTitle('Helldivers — Active Campaign Planets')
-                    .setColor('#e03b3b')
-                    .setFooter({ text: 'Data from Helldivers Training Manual' });
-
-                if (planets.length === 0) {
-                    embed.setDescription('No active campaign planets found.');
-                    return interaction.editReply({ embeds: [embed] });
+            if (sub === 'testalert') {
+                // Force send the latest update to the alert channel, even if not new
+                const fs = require('fs');
+                const path = require('path');
+                const alertFile = path.join(__dirname, '../helldivers_alert.json');
+                let alertData = null;
+                if (!fs.existsSync(alertFile)) {
+                    return interaction.editReply({ content: 'No alert channel set. Use /helldivers alert in a channel first.', ephemeral: true });
                 }
+                try {
+                    alertData = JSON.parse(fs.readFileSync(alertFile, 'utf8'));
+                } catch (e) {
+                    return interaction.editReply({ content: 'Could not read alert file.', ephemeral: true });
+                }
+                if (!alertData.channelId) {
+                    return interaction.editReply({ content: 'No alert channel set. Use /helldivers alert in a channel first.', ephemeral: true });
+                }
+                const res = await axios.get(`${API_BASE}/war/news`).catch(() => null);
+                const news = res && Array.isArray(res.data) ? res.data : [];
+                const latest = news.length ? news[news.length - 1] : null;
+                if (!latest) {
+                    return interaction.editReply({ content: 'No updates found from the API.', ephemeral: true });
+                }
+                const channel = interaction.client.channels.cache.get(alertData.channelId);
+                if (!channel) {
+                    return interaction.editReply({ content: 'Alert channel not found. Set it again with /helldivers alert.', ephemeral: true });
+                }
+                // Try to find a patch notes link in the message or add a default
+                let patchLink = '';
+                if (latest.links && Array.isArray(latest.links) && latest.links.length) {
+                    patchLink = latest.links[0];
+                } else if (latest.message && latest.message.match(/https?:\/\/[\w./?=&%-]+/)) {
+                    patchLink = latest.message.match(/https?:\/\/[\w./?=&%-]+/)[0];
+                } else {
+                    patchLink = 'https://helldiverstrainingmanual.com/patch-notes';
+                }
+                const time = latest.time ? new Date(latest.time).toUTCString() : '';
+                const msg = `**Helldivers Update!**\n${time}\n${latest.message || JSON.stringify(latest).slice(0, 200)}\nPatch notes: ${patchLink}`;
+                await channel.send(msg);
+                return interaction.editReply({ content: `Test alert sent to <#${alertData.channelId}>.`, ephemeral: true });
+            }
 
-                const lines = planets.slice(0, limit).map(p => {
-                    // Extract readable name from planet array
-                    if (p && (p.name || p.planetName)) return `**${p.name || p.planetName}** — ${p.index ?? ''}`;
-                    if (Array.isArray(p) && p[1]) return `**${p[1]}** — ${p[2] ?? ''}`;
-                    return JSON.stringify(p).slice(0, 80);
-                });
-
-                embed.setDescription(lines.join('\n'));
-                embed.setTimestamp();
+            if (sub === 'updates') {
+                // Show the latest news/update from the API, always include patch notes link if possible
+                const res = await axios.get(`${API_BASE}/war/news`);
+                const news = Array.isArray(res.data) ? res.data : [];
+                const latest = news.length ? news[news.length - 1] : null;
+                const embed = new EmbedBuilder()
+                    .setTitle('Helldivers — Latest Update')
+                    .setColor('#f5b041')
+                    .setFooter({ text: 'Source: Helldivers Training Manual' })
+                    .setTimestamp();
+                if (!latest) {
+                    embed.setDescription('No updates found.');
+                } else {
+                    const time = latest.time ? new Date(latest.time).toUTCString() : '';
+                    let patchLink = '';
+                    if (latest.links && Array.isArray(latest.links) && latest.links.length) {
+                        patchLink = latest.links[0];
+                    } else if (latest.message && latest.message.match(/https?:\/\/[\w./?=&%-]+/)) {
+                        patchLink = latest.message.match(/https?:\/\/[\w./?=&%-]+/)[0];
+                    } else {
+                        patchLink = 'https://helldiverstrainingmanual.com/patch-notes';
+                    }
+                    embed.setDescription(`**${time}**\n${latest.message || JSON.stringify(latest).slice(0, 200)}\nPatch notes: ${patchLink}`);
+                }
                 return interaction.editReply({ embeds: [embed] });
             }
 
-            if (sub === 'drops') {
-                const limit = Math.min(interaction.options.getInteger('limit') || 5, 10);
-                const res = await axios.get(`${API_BASE}/war/news`);
-                const news = Array.isArray(res.data) ? res.data : [];
-
-                const embed = new EmbedBuilder()
-                    .setTitle('Helldivers — Recent News')
-                    .setColor('#4aa96c')
-                    .setFooter({ text: 'Source: Helldivers Training Manual' });
-
-                if (news.length === 0) {
-                    embed.setDescription('No news items returned by the API.');
-                    return interaction.editReply({ embeds: [embed] });
-                }
-
-                const items = news.slice(-limit).map(n => {
-                    const time = n && n.time ? new Date(n.time).toUTCString() : '';
-                    const message = n && n.message ? n.message : JSON.stringify(n).slice(0, 100);
-                    return `**${time}** — ${message}`;
-                });
-
-                embed.setDescription(items.join('\n\n'));
-                embed.setTimestamp();
-                return interaction.editReply({ embeds: [embed] });
+            if (sub === 'alert') {
+                // Store the channel ID for alerts in a file (simple JSON)
+                const fs = require('fs');
+                const path = require('path');
+                const alertFile = path.join(__dirname, '../helldivers_alert.json');
+                const channelId = interaction.channelId;
+                let data = { channelId, lastUpdate: 0 };
+                try {
+                    if (fs.existsSync(alertFile)) {
+                        const raw = fs.readFileSync(alertFile, 'utf8');
+                        data = JSON.parse(raw);
+                    }
+                } catch (e) {}
+                data.channelId = channelId;
+                // Save
+                fs.writeFileSync(alertFile, JSON.stringify(data, null, 2));
+                return interaction.editReply({ content: `Alert set! This channel (<#${channelId}>) will receive a message when a new Helldivers update is detected.`, ephemeral: true });
             }
 
             if (sub === 'map') {
-                // Fetch status, campaign, and major orders concurrently
-                const [statusRes, campaignRes, ordersRes] = await Promise.all([
+                // Fetch status, campaign, major orders, and planets concurrently
+                const [statusRes, campaignRes, ordersRes, planetsRes] = await Promise.all([
                     axios.get(`${API_BASE}/war/status`).catch(() => ({ data: null })),
                     axios.get(`${API_BASE}/war/campaign`).catch(() => ({ data: null })),
                     axios.get(`${API_BASE}/war/major-orders`).catch(() => ({ data: null })),
+                    axios.get(`${API_BASE}/planets`).catch(() => ({ data: null })),
                 ]);
 
                 const status = statusRes && statusRes.data ? statusRes.data : null;
                 const campaign = campaignRes && campaignRes.data ? campaignRes.data : null;
                 const orders = ordersRes && ordersRes.data ? ordersRes.data : null;
+                const planetsData = planetsRes && planetsRes.data ? planetsRes.data : {};
 
                 const embed = new EmbedBuilder()
                     .setTitle('Helldivers — Real-time Galaxy Map')
@@ -108,12 +146,10 @@ module.exports = {
                 const statusMap = new Map();
                 if (status && Array.isArray(status)) {
                     for (const entry of status) {
-                        // status entries vary; try to pull index or id
                         const idx = entry.index ?? entry.planetIndex ?? entry[0] ?? null;
                         if (idx !== null && idx !== undefined) statusMap.set(String(idx), entry);
                     }
                 } else if (status && typeof status === 'object') {
-                    // Some endpoints return object keyed by index
                     for (const k of Object.keys(status)) statusMap.set(String(k), status[k]);
                 }
 
@@ -141,9 +177,7 @@ module.exports = {
                             }
                         } else if (typeof orders === 'object') orderNames.push(JSON.stringify(orders).slice(0,80));
                         if (orderNames.length) embed.addFields({ name: 'Major Orders', value: orderNames.join('\n') });
-                    } catch (e) {
-                        // ignore
-                    }
+                    } catch (e) {}
                 }
 
                 // For up to 6 active planets, fetch a short history to build a liberation trend
@@ -151,10 +185,8 @@ module.exports = {
 
                 const planetFields = [];
                 const historyPromises = planetsToShow.map(p => {
-                    // p might be array or object; try to get index
                     const idx = (p && (p.index ?? p.planetIndex)) ?? (Array.isArray(p) ? (p[2] ?? p[0]) : p);
                     const indexStr = String(idx ?? p);
-                    // fetch short history for trend (short timeframe)
                     return axios.get(`${API_BASE}/war/history/${indexStr}?timeframe=short`).then(r => ({ index: indexStr, history: r.data })).catch(() => ({ index: indexStr, history: null }));
                 });
 
@@ -163,10 +195,10 @@ module.exports = {
                 for (const item of histories) {
                     const idx = item.index;
                     const stat = statusMap.get(String(idx)) || {};
-                    // derive readable name
-                    let name = stat.name || stat.planetName || (Array.isArray(activePlanets) ? (activePlanets.find(ap => (ap.index==idx || ap[2]==idx || ap[0]==idx)) || [])[1] : null) || `#${idx}`;
+                    // Try to get planet info from planetsData
+                    const planetInfo = planetsData && planetsData[idx] ? planetsData[idx] : {};
+                    let name = planetInfo.name || planetInfo.planetName || stat.name || stat.planetName || (Array.isArray(activePlanets) ? (activePlanets.find(ap => (ap.index==idx || ap[2]==idx || ap[0]==idx)) || [])[1] : null) || `#${idx}`;
                     const players = stat.players ?? stat.playerCount ?? stat[1] ?? 'N/A';
-                    // history: array of records with liberation status; try to extract % values
                     const hist = Array.isArray(item.history) ? item.history : [];
                     const percents = hist.map(h => {
                         if (h && (h.liberation !== undefined)) return Number(h.liberation) || 0;
@@ -175,15 +207,16 @@ module.exports = {
                         if (h && h[1] !== undefined && !isNaN(Number(h[1]))) return Number(h[1]);
                         return 0;
                     }).filter(v => v !== null && v !== undefined);
-
                     const current = percents.length ? percents[percents.length-1] : (stat.liberation ?? stat.liberationPercent ?? stat[2] ?? 'N/A');
                     const trend = percents.length ? sparkline(percents) : 'no history';
-
-                    planetFields.push({ name: `${name}`, value: `Players: **${players}** • Liberation: **${current}%**\nTrend: ${trend}` });
+                    // Try to include image if available
+                    let img = planetInfo.image || planetInfo.thumbnail || planetInfo.img || null;
+                    let value = `Players: **${players}** • Liberation: **${current}%**\nTrend: ${trend}`;
+                    if (img) value += `\n[Image](${img})`;
+                    planetFields.push({ name: `${name}`, value });
                 }
 
                 if (planetFields.length) {
-                    // Discord limits 25 fields; we add what we have
                     embed.addFields(...planetFields);
                 } else {
                     embed.setDescription('No planet data available to build the map.');

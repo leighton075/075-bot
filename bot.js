@@ -240,6 +240,35 @@ client.once('ready', async () => {
             console.error('Error checking server status:', error);
         }
     }, 60000); // Check every 60 seconds
+
+    // Helldivers Update Notifier
+    setInterval(async () => {
+        try {
+            const alertFile = path.join(__dirname, 'helldivers_alert.json');
+            if (!fs.existsSync(alertFile)) return;
+            let alertData = null;
+            try {
+                alertData = JSON.parse(fs.readFileSync(alertFile, 'utf8'));
+            } catch (e) { return; }
+            if (!alertData.channelId) return;
+            const channel = client.channels.cache.get(alertData.channelId);
+            if (!channel) return;
+            const res = await axios.get('https://helldiverstrainingmanual.com/api/v1/war/news');
+            const news = Array.isArray(res.data) ? res.data : [];
+            const latest = news.length ? news[news.length - 1] : null;
+            if (!latest) return;
+            const lastTime = alertData.lastUpdate || 0;
+            const latestTime = latest.time ? new Date(latest.time).getTime() : 0;
+            if (latestTime > lastTime) {
+                const msg = `**Helldivers Update!**\n${latest.message || JSON.stringify(latest).slice(0, 200)}`;
+                await channel.send(msg);
+                alertData.lastUpdate = latestTime;
+                fs.writeFileSync(alertFile, JSON.stringify(alertData, null, 2));
+            }
+        } catch (e) {
+            console.error('Error in Helldivers update notifier:', e);
+        }
+    }, 180000); // Check every 3 minutes
 });
 
 // ==========================
