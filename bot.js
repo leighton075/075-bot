@@ -20,12 +20,6 @@ const client = new Client({
 });
 
 // ==========================
-// Minecraft Server Monitoring
-// ==========================
-const mcChannelId = '1331450221435289603';
-let lastServerOnline = null;
-
-// ==========================
 // Spotify Login & Auth
 // ==========================
 const spotifyApi = new SpotifyWebApi({
@@ -166,109 +160,6 @@ client.once('ready', async () => {
     } catch (err) {
         console.error(`[ERROR] Error fetching playlist tracks: ${err}`);
     }
-
-    // Minecraft Server Monitoring
-    setInterval(async () => {
-        try {
-            const response = await axios.get('https://api.mcsrvstat.us/3/139.99.189.213:25594', {
-                headers: {
-                    'User-Agent': 'Discord Bot - 075-bot'
-                }
-            });
-            const data = response.data;
-            const currentOnline = data.online;
-
-            if (lastServerOnline !== null && lastServerOnline !== currentOnline) {
-                const channel = client.channels.cache.get(mcChannelId);
-                if (channel) {
-                    let statusMessage = '';
-                    let embedColor = currentOnline ? 0x00FF00 : 0xFF0000;
-                    let fields = [
-                        { name: 'IP', value: data.ip || 'Unknown', inline: true },
-                        { name: 'Port', value: data.port ? data.port.toString() : 'Unknown', inline: true }
-                    ];
-
-                    if (currentOnline) {
-                        statusMessage = '🟢 Server is now Online';
-                        if (data.version) fields.push({ name: 'Version', value: data.version, inline: true });
-                        if (data.players) fields.push({ name: 'Players', value: `${data.players.online}/${data.players.max}`, inline: true });
-                    } else {
-                        // Determine offline reason
-                        let offlineReason = 'Server offline';
-                        if (data.debug) {
-                            if (!data.debug.srv) {
-                                offlineReason = 'Server not found (DNS/SRV record issue)';
-                                embedColor = 0xFFA500; // Orange for DNS issues
-                            } else if (!data.debug.ping && !data.debug.query) {
-                                offlineReason = 'Server not responding (possibly stopped, crashed, or network issue)';
-                            } else if (data.debug.querymismatch) {
-                                offlineReason = 'Port mismatch detected (query port differs from server port)';
-                            } else if (data.debug.ipinsrv) {
-                                offlineReason = 'SRV record contains IP (should use hostname)';
-                            } else if (data.debug.cnameinsrv) {
-                                offlineReason = 'SRV record contains CNAME (should use A/AAAA records)';
-                            }
-                        }
-                        statusMessage = `🔴 ${offlineReason}`;
-                        console.log(`[MC MONITOR] Offline reason: ${offlineReason}`);
-
-                        // Add debug info fields
-                        if (data.debug) {
-                            fields.push(
-                                { name: 'Debug - Ping', value: data.debug.ping ? '✅' : '❌', inline: true },
-                                { name: 'Debug - Query', value: data.debug.query ? '✅' : '❌', inline: true },
-                                { name: 'Debug - SRV', value: data.debug.srv ? '✅' : '❌', inline: true }
-                            );
-                        }
-                    }
-
-                    const embed = new EmbedBuilder()
-                        .setTitle('Minecraft Server Status Update')
-                        .setColor(embedColor)
-                        .addFields(
-                            { name: 'Status', value: statusMessage, inline: false },
-                            ...fields
-                        )
-                        .setTimestamp();
-
-                    await channel.send({ embeds: [embed] });
-                }
-            }
-
-            lastServerOnline = currentOnline;
-        } catch (error) {
-            console.error('Error checking server status:', error);
-        }
-    }, 60000); // Check every 60 seconds
-
-    // Helldivers Update Notifier
-    setInterval(async () => {
-        try {
-            const alertFile = path.join(__dirname, 'helldivers_alert.json');
-            if (!fs.existsSync(alertFile)) return;
-            let alertData = null;
-            try {
-                alertData = JSON.parse(fs.readFileSync(alertFile, 'utf8'));
-            } catch (e) { return; }
-            if (!alertData.channelId) return;
-            const channel = client.channels.cache.get(alertData.channelId);
-            if (!channel) return;
-            const res = await axios.get('https://helldiverstrainingmanual.com/api/v1/war/news');
-            const news = Array.isArray(res.data) ? res.data : [];
-            const latest = news.length ? news[news.length - 1] : null;
-            if (!latest) return;
-            const lastTime = alertData.lastUpdate || 0;
-            const latestTime = latest.time ? new Date(latest.time).getTime() : 0;
-            if (latestTime > lastTime) {
-                const msg = `**Helldivers Update!**\n${latest.message || JSON.stringify(latest).slice(0, 200)}`;
-                await channel.send(msg);
-                alertData.lastUpdate = latestTime;
-                fs.writeFileSync(alertFile, JSON.stringify(alertData, null, 2));
-            }
-        } catch (e) {
-            console.error('Error in Helldivers update notifier:', e);
-        }
-    }, 180000); // Check every 3 minutes
 });
 
 // ==========================
